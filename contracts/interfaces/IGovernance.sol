@@ -5,12 +5,11 @@ import {IExecutor} from "./IExecutor.sol";
 
 interface IGovernance {
     enum ProposalState {
-        Pending,
+        Staking,
         Canceled,
         Active,
         Failed,
         Succeeded,
-        Queued,
         Expired,
         Executed
     }
@@ -18,26 +17,70 @@ interface IGovernance {
     struct Proposal {
         uint256 id;
         address creator;
+
         IExecutor executor;
         address[] targets;
         uint256[] values;
         string[] signatures;
         bytes[] calldatas;
         bool[] withDelegatecalls;
+
         uint256 startBlock;
         uint256 endBlock;
-        uint256 executionTime;
-        // uint256 forVotes;
-        // uint256 againstVotes;
+        uint256 executionBlock;
+        
         bool executed;
         bool canceled;
-        address strategy;
+
+        // bool voteReview;
+        //如果为 true，提案由预测市场决定，否则由投票决定。TODO：是否加入预测市场辅助的评议方式 
+        bool marketReview;  
+
         bytes32 ipfsHash;
-        // mapping(address => Vote) votes;
+        mapping(address => uint256) stakes;
     }
 
+    struct ProposalInfo {
+        uint256 id;
+        address creator;
+
+        IExecutor executor;
+        address[] targets;
+        uint256[] values;
+        string[] signatures;
+        bytes[] calldatas;
+        bool[] withDelegatecalls;
+
+        uint256 startBlock;
+        uint256 endBlock;
+        uint256 executionBlock;
+        
+        bool executed;
+        bool canceled;
+
+        bool marketReview;  
+
+        bytes32 ipfsHash;
+    }
+
+    event ProposalCreated(
+        uint256 id,
+        address indexed creator,
+        IExecutor indexed executor,
+        address[] targets,
+        uint256[] values,
+        string[] signatures,
+        bytes[] calldatas,
+        bool[] withDelegatecalls,
+        uint256 startBlock,
+        uint256 endBlock,
+        bytes32 ipfsHash
+    );
+
+    event ProposalCanceled(uint256 id);
+
     function create(
-        IExecutorWithTimelock executor,
+        IExecutor executor,
         address[] memory targets,
         uint256[] memory values,
         string[] memory signatures,
@@ -48,15 +91,31 @@ interface IGovernance {
 
     function cancel(uint256 proposalId) external;
 
-    function queue(uint256 proposalId) external;
+    // 合约评议方式
+    // 在提案的质押值超过阈值后，调用该方法创建市场。提案的评议方式也改为
+    
+    function createMarket(uint256 proposalId) external;
+
+    function stake(
+        uint256 proposalId,
+        uint256 amount
+    ) external;
+
+    function deposit() external;
+
+    function getStakeOnProposal(uint256 proposalId, address staker) external view returns (uint256);
+
+    // 提案执行相关函数，governance 合约负责 executor 合约执行交易，具体的执行过程由 executor 合约执行
+    function authorizeExecutors(address[] memory executors) external;
+
+    function unauthorizeExecutors(address[] memory executors) external;
+
+    function isExecutorAuthorized(address executor) external view returns (bool);
 
     function execute(uint256 proposalId) external payable;
 
-    // 通过治理合约接口对提案进行评议
-    // TODO：接入 strategy 合约，如何选择评议方式
-    function eval(uint256 proposalId);
-
-    function setGovernanceStrategy(address governanceStrategy) external;
-
+    // 合约状态
     function getProposalState(uint256 proposalId) external view returns (ProposalState);
+
+    function getProposalById(uint256 proposalId) external view returns (ProposalInfo memory);
 }

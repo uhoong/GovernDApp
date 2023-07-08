@@ -21,6 +21,8 @@ governance strategy 关于治理策略，改成模块化
 
 提案发布链上部分参考aave
 
+cosmos 轻客户端，链外验证，治理模块
+
 ## 参考资料
 
 ### AAVE
@@ -40,9 +42,9 @@ governance strategy 关于治理策略，改成模块化
 
 拥有足够提案权的用户可以链上提交 AIP，使用 governance contract 的 create() 方法。
 
-#### 2. Aave 治理合约作用
+#### 2. Aave 治理合约原理
 
-##### AaveGovernance 合约作用
+##### AaveGovernance 合约原理
 
 记录：
 * 采用的 Stratage 合约
