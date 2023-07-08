@@ -155,6 +155,7 @@ contract Governance is Ownable, IGovernance {
             proposal.executor.isProposalOverGracePeriod(this, proposalId)
         ) {
             return ProposalState.Expired;
+            
         }
     }
 }
