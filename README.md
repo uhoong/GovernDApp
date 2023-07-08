@@ -11,10 +11,40 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.js
 ```
+# 链上提案管理系统开发
 
-# Aave 治理合约作用
+## Todo
 
-## AaveGovernance 合约作用
+提案管理系统
+governance strategy 关于治理策略，改成模块化
+确定各个模块接口
+
+提案发布链上部分参考aave
+
+cosmos 轻客户端，链外验证，治理模块
+
+## 参考资料
+
+### AAVE
+
+#### 1. AAVE 提案提交过程
+
+1. 编写 AIP
+2. 准备链上治理
+
+在 AIP 上链之前，需要做好以下准备：
+
+* 审查后的 AIP 合并主分支
+* 审查后的 AIP 被分解并且上传至 IPFS
+* payload 被检查和充分测试
+
+3. 链上提交 AIP
+
+拥有足够提案权的用户可以链上提交 AIP，使用 governance contract 的 create() 方法。
+
+#### 2. Aave 治理合约原理
+
+##### AaveGovernance 合约原理
 
 记录：
 * 采用的 Stratage 合约
