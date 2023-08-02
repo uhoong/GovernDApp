@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IExecutor} from "./IExecutor.sol";
 
 interface IGovernance {
@@ -34,7 +35,8 @@ interface IGovernance {
 
         // bool voteReview;
         //如果为 true，提案由预测市场决定，否则由投票决定。TODO：是否加入预测市场辅助的评议方式 
-        bool marketReview;  
+        bool marketReview;
+        uint256 stakeAmount;
 
         bytes32 ipfsHash;
         mapping(address => uint256) stakes;
@@ -58,7 +60,8 @@ interface IGovernance {
         bool executed;
         bool canceled;
 
-        bool marketReview;  
+        bool marketReview;
+        uint256 stakeAmount;  
 
         bytes32 ipfsHash;
     }
@@ -92,16 +95,12 @@ interface IGovernance {
     function cancel(uint256 proposalId) external;
 
     // 合约评议方式
-    // 在提案的质押值超过阈值后，调用该方法创建市场。提案的评议方式也改为
-    
-    function createMarket(uint256 proposalId) external;
-
     function stake(
         uint256 proposalId,
         uint256 amount
     ) external;
 
-    function deposit() external;
+    function deposit(uint256 proposalId) external;
 
     function getStakeOnProposal(uint256 proposalId, address staker) external view returns (uint256);
 
