@@ -11,6 +11,15 @@ contract TimeTokenSuit{
 
     mapping(address=>mapping(uint256=>TimeToken)) public timeStack;
 
+    function getVotingPower(address addr) public view returns(uint256 holdingTime){
+        holdingTime = 0;
+        uint256 top = stackTop[addr];
+        mapping(uint256=>TimeToken) storage stack = timeStack[addr];
+        for(uint256 i=0;i<top;i++){
+            holdingTime+=stack[i].amount*(block.number-stack[i].blocknumber);
+        }
+    }
+
     function _removeTimeToken(address addr,uint256 amount) internal{
         uint256 top = stackTop[addr]-1;
         while(amount>0){

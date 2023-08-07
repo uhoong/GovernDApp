@@ -10,6 +10,78 @@ import {IValidator} from "../interfaces/IValidator.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Governance is Ownable, IGovernance {
+    enum ProposalState {
+        Staking,
+        Canceled,
+        Active,
+        Failed,
+        Succeeded,
+        Expired,
+        Executed,
+        Queued
+    }
+
+    struct Proposal {
+        uint256 id;
+        address creator;
+        uint256 proposalType; //暂时没用的字段
+        IExecutor executor;
+        address[] targets;
+        uint256[] values;
+        string[] signatures;
+        bytes[] calldatas;
+        bool[] withDelegatecalls;
+        uint256 startBlock; //提案在创建后，会有几天的等待时间
+        uint256 endBlock; //在endblock前可以投票
+        uint256 executionBlock; //在executionBlock后才可以执行
+        bool executed;
+        bool canceled;
+        // bool voteReview;
+        //如果为 true，提案由预测市场决定，否则由投票决定。TODO：是否加入预测市场辅助的评议方式
+        bool marketReview; //暂时没用的字段
+        uint256 stakeAmount; //暂时没用的字段
+        bytes32 ipfsHash;
+        mapping(address => uint256) stakes; //暂时没用的字段
+    }
+
+    struct ProposalInfo {
+        uint256 id;
+        address creator;
+        uint256 proposalType; //暂时没用的字段
+        IExecutor executor;
+        address[] targets;
+        uint256[] values;
+        string[] signatures;
+        bytes[] calldatas;
+        bool[] withDelegatecalls;
+        uint256 startBlock;
+        uint256 endBlock;
+        uint256 executionBlock;
+        bool executed;
+        bool canceled;
+        bool marketReview;
+        uint256 stakeAmount;
+        bytes32 ipfsHash;
+    }
+
+    event ProposalCreated(
+        uint256 id,
+        address indexed creator,
+        uint256 proposalType,
+        IExecutor indexed executor,
+        address[] targets,
+        uint256[] values,
+        string[] signatures,
+        bytes[] calldatas,
+        bool[] withDelegatecalls,
+        uint256 startBlock,
+        uint256 endBlock,
+        bytes32 ipfsHash
+    );
+
+    event ProposalCanceled(uint256 id);
+
+    // 主代码
     using SafeMath for uint256;
 
     mapping(uint256 => Proposal) private _proposals;
@@ -17,24 +89,26 @@ contract Governance is Ownable, IGovernance {
     uint256 private _proposalsCount;
 
     uint256 private _stakeDelay;
-    uint256 private _reviewDuration;
-    uint256 private _executeDelay;
+    // uint256 private _reviewDuration;
+    // uint256 private _executeDelay;
 
-    // TODO: Governance 合约只调用函数，具体的执行策略应交由 Execute 合约决定，比如执行可延迟时间
-    uint256 private GRACE_PERIOD;
+    // uint256 private GRACE_PERIOD;
     IERC20 public immutable governanceToken;
+    IReview public immutable review;
 
-    constructor(IERC20 _governanceToken) {
+    constructor(IERC20 _governanceToken,IReview _review) {
         _stakeDelay = 7200;
-        _reviewDuration = 19200;
-        _executeDelay = 7200;
-        GRACE_PERIOD = 7200;
+        // _reviewDuration = 19200;
+        // _executeDelay = 7200;
+        // GRACE_PERIOD = 7200;
+        review = _review;
         governanceToken = _governanceToken;
     }
 
     // TODO：Governance 合约应提供创建市场的接口，这样才能以该市场的信息为准
 
     function create(
+        uint256 proposalType,
         IExecutor executor,
         address[] memory targets,
         uint256[] memory values,
@@ -61,7 +135,7 @@ contract Governance is Ownable, IGovernance {
             IValidator(address(executor)).validateCreatorOfProposal(
                 this,
                 msg.sender,
-                block.number-1
+                block.number - 1
             ),
             "PROPOSITION_CREATION_INVALID"
         );
@@ -69,6 +143,7 @@ contract Governance is Ownable, IGovernance {
         Proposal storage newProposal = _proposals[_proposalsCount];
 
         newProposal.id = _proposalsCount;
+        newProposal.proposalType = proposalType;
         newProposal.creator = msg.sender;
         newProposal.executor = executor;
         newProposal.targets = targets;
@@ -78,8 +153,8 @@ contract Governance is Ownable, IGovernance {
         newProposal.withDelegatecalls = withDelegatecalls;
 
         newProposal.startBlock = block.number + _stakeDelay;
-        newProposal.endBlock = newProposal.startBlock + _reviewDuration;
-        newProposal.executionBlock = newProposal.endBlock + _executeDelay;
+        newProposal.endBlock = newProposal.startBlock + review.REVIEW_DURATION();
+        // newProposal.executionBlock = newProposal.endBlock + _executeDelay;
 
         newProposal.ipfsHash = ipfsHash;
 
@@ -88,6 +163,7 @@ contract Governance is Ownable, IGovernance {
         emit ProposalCreated(
             newProposal.id,
             msg.sender,
+            proposalType,
             executor,
             targets,
             values,
@@ -120,41 +196,51 @@ contract Governance is Ownable, IGovernance {
             "PROPOSITION_CANCELLATION_INVALID"
         );
         proposal.canceled = true;
+        for (uint256 i = 0; i < proposal.targets.length; i++) {
+            proposal.executor.cancelTransaction(
+                proposal.targets[i],
+                proposal.values[i],
+                proposal.signatures[i],
+                proposal.calldatas[i],
+                proposal.executionTime,
+                proposal.withDelegatecalls[i]
+            );
+        }
 
         emit ProposalCanceled(proposalId);
     }
 
-    function stake(uint256 proposalId, uint256 amount) external {
-        ProposalState state = getProposalState(proposalId);
-        require(state == ProposalState.Staking, "ONLY_STAKING");
+    // function stake(uint256 proposalId, uint256 amount) external {
+    //     ProposalState state = getProposalState(proposalId);
+    //     require(state == ProposalState.Staking, "ONLY_STAKING");
 
-        require(
-            governanceToken.transferFrom(msg.sender, address(this), amount),
-            "GOVERNACNETOKEN_TRANSFER_FAILED"
-        );
+    //     require(
+    //         governanceToken.transferFrom(msg.sender, address(this), amount),
+    //         "GOVERNACNETOKEN_TRANSFER_FAILED"
+    //     );
 
-        Proposal storage proposal = _proposals[proposalId];
-        proposal.stakeAmount+=amount;
-        proposal.stakes[msg.sender]+=amount;
-    }
+    //     Proposal storage proposal = _proposals[proposalId];
+    //     proposal.stakeAmount+=amount;
+    //     proposal.stakes[msg.sender]+=amount;
+    // }
 
-    function deposit(uint256 proposalId) external{
-        ProposalState state = getProposalState(proposalId);
-        require(state != ProposalState.Staking, "PROPOSAL_STAKING");
-        
-        Proposal storage proposal = _proposals[proposalId];
-        uint256 amount = proposal.stakes[msg.sender];
+    // function deposit(uint256 proposalId) external{
+    //     ProposalState state = getProposalState(proposalId);
+    //     require(state != ProposalState.Staking, "PROPOSAL_STAKING");
 
-        require(amount!=0,"ZERO_STAKE");
+    //     Proposal storage proposal = _proposals[proposalId];
+    //     uint256 amount = proposal.stakes[msg.sender];
 
-        proposal.stakes[msg.sender]=0;
-        governanceToken.transfer(msg.sender,amount);
-    }
+    //     require(amount!=0,"ZERO_STAKE");
 
-    function getStakeOnProposal(uint256 proposalId, address staker) external view returns (uint256){
-        Proposal storage proposal = _proposals[proposalId];
-        return proposal.stakes[staker];
-    }
+    //     proposal.stakes[msg.sender]=0;
+    //     governanceToken.transfer(msg.sender,amount);
+    // }
+
+    // function getStakeOnProposal(uint256 proposalId, address staker) external view returns (uint256){
+    //     Proposal storage proposal = _proposals[proposalId];
+    //     return proposal.stakes[staker];
+    // }
 
     // 提案执行相关函数，governance 合约负责 executor 合约执行交易，具体的执行过程由 executor 合约执行
     function authorizeExecutors(
@@ -234,9 +320,13 @@ contract Governance is Ownable, IGovernance {
     }
 
     // 提案投票/市场创建
-    function createVote(uint256 proposalId) public{
-        require(getProposalState(proposalId) == ProposalState.Active, 'VOTING_CLOSED');
+    function createReview(uint256 proposalId) public {
+        require(
+            getProposalState(proposalId) == ProposalState.Active,
+            "REVIEW_CLOSED"
+        );
         Proposal storage proposal = _proposals[proposalId];
+        return review.createReview(proposalId,proposal.endBlock);
     }
 
     // 提案信息获取

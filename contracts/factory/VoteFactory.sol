@@ -13,38 +13,36 @@ contract VoteFactory {
         timeTokenVoteImplementation = new TimeTokenVote();
     }
 
-    function createVote(uint256 proposalId) public returns (address) {
-        return address(createTimeTokenVote(proposalId));
+    function createVote(uint256 proposalId,uint256 startBlock,uint256 endBlock) public returns (address) {
+        return createTimeTokenVote(proposalId,startBlock,endBlock);
     }
 
     function createTimeTokenVote(
-        uint256 salt
-    ) public returns (TimeTokenVote ret) {
-        address addr = getAddress(salt);
+        uint256 proposalId,uint256 startBlock,uint256 endBlock
+    ) public returns (address ret) {
+        address addr = getAddress(proposalId,startBlock,endBlock);
         uint codeSize = addr.code.length;
         if (codeSize > 0) {
-            return TimeTokenVote(payable(addr));
+            return payable(addr);
         }
-        ret = TimeTokenVote(
-            payable(
-                new ERC1967Proxy{salt: bytes32(salt)}(
-                    address(timeTokenVoteImplementation),
-                    abi.encodeCall(TimeTokenVote.initialize, ())
-                )
+        ret = payable(
+            new ERC1967Proxy{salt: bytes32(proposalId)}(
+                address(timeTokenVoteImplementation),
+                abi.encodeCall(TimeTokenVote.initialize, (startBlock,endBlock))
             )
         );
     }
 
-    function getAddress(uint256 salt) public view returns (address) {
+    function getAddress(uint256 proposalId,uint256 startBlock,uint256 endBlock) public view returns (address) {
         return
             Create2.computeAddress(
-                bytes32(salt),
+                bytes32(proposalId),
                 keccak256(
                     abi.encodePacked(
                         type(ERC1967Proxy).creationCode,
                         abi.encode(
                             address(timeTokenVoteImplementation),
-                            abi.encodeCall(TimeTokenVote.initialize, ())
+                            abi.encodeCall(TimeTokenVote.initialize, (startBlock,endBlock))
                         )
                     )
                 )
