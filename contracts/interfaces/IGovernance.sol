@@ -5,15 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IExecutor} from "./IExecutor.sol";
 
 interface IGovernance {
-    function create(
-        IExecutor executor,
-        address[] memory targets,
-        uint256[] memory values,
-        string[] memory signatures,
-        bytes[] memory calldatas,
-        bool[] memory withDelegatecalls,
-        bytes32 ipfsHash
-    ) external returns (uint256);
+     
 
     function cancel(uint256 proposalId) external;
 
