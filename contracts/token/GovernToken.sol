@@ -1,45 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {TimeTokenSuit} from "./HoldingTime.sol";
+// import {TimeTokenSuit} from "./HoldingTime.sol";
 
-contract GovernToken is ERC20,TimeTokenSuit {
-    /// @notice A record of each accounts delegate
+contract GovernToken is ERC20{
     mapping(address => address) public delegates;
 
-    /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
         uint256 fromBlock;
         uint256 votes;
     }
 
-    /// @notice A record of votes checkpoints for each account, by index
     mapping(address => mapping(uint256 => Checkpoint)) public checkpoints;
 
-    /// @notice The number of checkpoints for each account
     mapping(address => uint256) public numCheckpoints;
 
-    /// @notice A record of states for signing / validating signatures
-    mapping(address => uint256) public nonces;
+    // mapping(address => uint256) public nonces;
 
-    /// @notice An event thats emitted when an account changes its delegate
     event DelegateChanged(
         address indexed delegator,
         address indexed fromDelegate,
         address indexed toDelegate
     );
 
-    /// @notice An event thats emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(
         address indexed delegate,
         uint previousBalance,
         uint newBalance
     );
 
-    /**
-     * @notice Construct a new Comp token
-     * @param account The initial account to grant all the tokens
-     */
     constructor(address account) ERC20("GovernToken", "GT") {
         _mint(account, 10000000e18);
         emit Transfer(address(0), account, 10000000e18);
@@ -49,15 +38,11 @@ contract GovernToken is ERC20,TimeTokenSuit {
 
     function _afterTokenTransfer(address from, address to, uint256 amount) internal override {
         _moveDelegates(delegates[from], delegates[to], amount);
-        _removeTimeToken(from,amount);
-        _addTimeToken(to,amount);
+        // _removeTimeToken(from,amount);
+        // _addTimeToken(to,amount);
     }
 
     
-    /**
-     * @notice Delegate votes from `msg.sender` to `delegatee`
-     * @param delegatee The address to delegate votes to
-     */
     function delegate(address delegatee) public {
         return _delegate(msg.sender, delegatee);
     }

@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import {IGovernacne} from "../interfaces/IGovernacne.sol";
-import {IVote} from "../interfaces/factory/IVote.sol";
 import {IGovernToken} from "../interfaces/token/IGovernToken.sol";
 // import {IVotingStrategy} from "../interfaces/IVotingStrategy.sol";
 
@@ -71,35 +70,35 @@ contract TimeTokenVote is Initializable, IVote {
         vote.votingPower = uint248(votingPower);
     }
 
-    function isProposalPassed() public view returns (bool) {
-        return (isQuorumValid() && isVoteDifferentialValid());
-    }
+    // function isProposalPassed() public view returns (bool) {
+    //     return (isQuorumValid() && isVoteDifferentialValid());
+    // }
 
-    function isQuorumValid() public view override returns (bool) {
-        IAaveGovernanceV2.ProposalWithoutVotes memory proposal = governance
-            .getProposalById(proposalId);
-        uint256 votingSupply = IGovernanceStrategy(proposal.strategy)
-            .getTotalVotingSupplyAt(proposal.startBlock);
+    // function isQuorumValid() public view override returns (bool) {
+    //     IAaveGovernanceV2.ProposalWithoutVotes memory proposal = governance
+    //         .getProposalById(proposalId);
+    //     uint256 votingSupply = IGovernanceStrategy(proposal.strategy)
+    //         .getTotalVotingSupplyAt(proposal.startBlock);
 
-        return forVotes >= getMinimumVotingPowerNeeded(votingSupply);
-    }
+    //     return forVotes >= getMinimumVotingPowerNeeded(votingSupply);
+    // }
 
-    function isVoteDifferentialValid(
-        IAaveGovernanceV2 governance,
-        uint256 proposalId
-    ) public view override returns (bool) {
-        IAaveGovernanceV2.ProposalWithoutVotes memory proposal = governance
-            .getProposalById(proposalId);
-        uint256 votingSupply = IGovernanceStrategy(proposal.strategy)
-            .getTotalVotingSupplyAt(proposal.startBlock);
+    // function isVoteDifferentialValid(
+    //     IAaveGovernanceV2 governance,
+    //     uint256 proposalId
+    // ) public view override returns (bool) {
+    //     IAaveGovernanceV2.ProposalWithoutVotes memory proposal = governance
+    //         .getProposalById(proposalId);
+    //     uint256 votingSupply = IGovernanceStrategy(proposal.strategy)
+    //         .getTotalVotingSupplyAt(proposal.startBlock);
 
-        return (proposal.forVotes.mul(ONE_HUNDRED_WITH_PRECISION).div(
-            votingSupply
-        ) >
-            proposal
-                .againstVotes
-                .mul(ONE_HUNDRED_WITH_PRECISION)
-                .div(votingSupply)
-                .add(VOTE_DIFFERENTIAL));
-    }
+    //     return (proposal.forVotes.mul(ONE_HUNDRED_WITH_PRECISION).div(
+    //         votingSupply
+    //     ) >
+    //         proposal
+    //             .againstVotes
+    //             .mul(ONE_HUNDRED_WITH_PRECISION)
+    //             .div(votingSupply)
+    //             .add(VOTE_DIFFERENTIAL));
+    // }
 }
