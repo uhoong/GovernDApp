@@ -10,23 +10,23 @@ contract Validator is IValidator {
     GovernToken public immutable GT;
 
     uint256 public immutable override PROPOSITION_THRESHOLD;
-    uint256 public immutable override VOTING_DURATION;
-    uint256 public immutable override VOTE_DIFFERENTIAL;
-    uint256 public immutable override MINIMUM_QUORUM;
+    // uint256 public immutable override VOTING_DURATION;
+    // uint256 public immutable override VOTE_DIFFERENTIAL;
+    // uint256 public immutable override MINIMUM_QUORUM;
     uint256 public constant override ONE_HUNDRED_WITH_PRECISION = 10000;
 
     constructor(
         address token,
-        uint256 propositionThreshold,
-        uint256 votingDuration,
-        uint256 voteDifferential,
-        uint256 minimumQuorum
+        uint256 propositionThreshold
+        // uint256 votingDuration,
+        // uint256 voteDifferential,
+        // uint256 minimumQuorum
     ) {
         GT = GovernToken(token);
         PROPOSITION_THRESHOLD = propositionThreshold;
-        VOTING_DURATION = votingDuration;
-        VOTE_DIFFERENTIAL = voteDifferential;
-        MINIMUM_QUORUM = minimumQuorum;
+        // VOTING_DURATION = votingDuration;
+        // VOTE_DIFFERENTIAL = voteDifferential;
+        // MINIMUM_QUORUM = minimumQuorum;
     }
 
     function validateCreatorOfProposal(

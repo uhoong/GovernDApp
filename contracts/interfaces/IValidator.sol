@@ -7,11 +7,11 @@ import {IReview} from "./IReview.sol";
 interface IValidator {
     function PROPOSITION_THRESHOLD() external view returns (uint256);
 
-    function VOTING_DURATION() external view returns (uint256);
+    // function VOTING_DURATION() external view returns (uint256);
 
-    function VOTE_DIFFERENTIAL() external view returns (uint256);
+    // function VOTE_DIFFERENTIAL() external view returns (uint256);
 
-    function MINIMUM_QUORUM() external view returns (uint256);
+    // function MINIMUM_QUORUM() external view returns (uint256);
 
     function ONE_HUNDRED_WITH_PRECISION() external view returns (uint256);
 

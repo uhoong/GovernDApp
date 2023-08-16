@@ -87,6 +87,16 @@ interface IGovernance {
 
     event ProposalExecuted(uint256 id, address indexed initiatorExecution);
 
+    event GovernanceStrategyChanged(
+        address indexed newStrategy,
+        address indexed initiatorChange
+    );
+
+    event StakingDelayChanged(
+        uint256 newStakingDelay,
+        address indexed initiatorChange
+    );
+
     function create(
         uint256 proposalType,
         IExecutor executor,
@@ -124,6 +134,16 @@ interface IGovernance {
     function execute(uint256 proposalId) external payable;
 
     function createReview(uint256 proposalId) external;
+
+    function setGovernanceStrategy(address governanceStrategy) external;
+
+    function setStakingDelay(uint256 votingDelay) external;
+
+    function getGovernanceStrategy() external view returns (address);
+
+    function getStakingDelay() external view returns (uint256);
+
+    function getProposalsCount() external view returns (uint256);
 
     // 合约状态
     function getProposalState(

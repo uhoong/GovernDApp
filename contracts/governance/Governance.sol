@@ -17,25 +17,27 @@ contract Governance is Ownable, IGovernance {
     mapping(address => bool) private _authorizedExecutors;
     uint256 private _proposalsCount;
 
-    uint256 private _stakeDelay;
+    uint256 private _stakingDelay;
     address private _governanceStrategy;
     // uint256 private _reviewDuration;
     // uint256 private _executeDelay;
 
-    // uint256 private GRACE_PERIOD;
     IERC20 public immutable governanceToken;
     IReview public immutable review;
 
-    constructor(IERC20 _governanceToken, IReview _review) {
-        _stakeDelay = 7200;
-        // _reviewDuration = 19200;
-        // _executeDelay = 7200;
-        // GRACE_PERIOD = 7200;
-        review = _review;
-        governanceToken = _governanceToken;
+    constructor(
+        address governanceStrategy,
+        address _review,
+        address _governanceToken,
+        uint256 stakingDelay,
+        address[] memory executors
+    ) {
+        _setGovernanceStrategy(governanceStrategy);
+        _setStakingDelay(stakingDelay);
+        review = IReview(_review);
+        governanceToken = IERC20(_governanceToken);
+        authorizeExecutors(executors);
     }
-
-    // TODO：Governance 合约应提供创建市场的接口，这样才能以该市场的信息为准
 
     function create(
         uint256 proposalType,
@@ -82,11 +84,10 @@ contract Governance is Ownable, IGovernance {
         newProposal.calldatas = calldatas;
         newProposal.withDelegatecalls = withDelegatecalls;
 
-        newProposal.startBlock = block.number + _stakeDelay;
+        newProposal.startBlock = block.number + _stakingDelay;
         newProposal.endBlock =
             newProposal.startBlock +
             review.REVIEW_DURATION();
-        // newProposal.executionBlock = newProposal.endBlock + _executeDelay;
 
         newProposal.strategy = _governanceStrategy;
 
@@ -355,15 +356,6 @@ contract Governance is Ownable, IGovernance {
     //     }
     // }
 
-    // 提案执行相关函数，governance 合约负责 executor 合约执行交易，具体的执行过程由 executor 合约执行
-    function _authorizeExecutor(address executor) internal {
-        _authorizedExecutors[executor] = true;
-    }
-
-    function _unauthorizeExecutor(address executor) internal {
-        _authorizedExecutors[executor] = false;
-    }
-
     // 提案投票/市场创建
     function createReview(uint256 proposalId) public {
         require(
@@ -430,5 +422,47 @@ contract Governance is Ownable, IGovernance {
             ipfsHash: proposal.ipfsHash
         });
         return proposalInfo;
+    }
+
+    function setGovernanceStrategy(
+        address governanceStrategy
+    ) external override onlyOwner {
+        _setGovernanceStrategy(governanceStrategy);
+    }
+
+    function setStakingDelay(uint256 StakingDelay) external override onlyOwner {
+        _setStakingDelay(StakingDelay);
+    }
+
+    function _authorizeExecutor(address executor) internal {
+        _authorizedExecutors[executor] = true;
+    }
+
+    function _unauthorizeExecutor(address executor) internal {
+        _authorizedExecutors[executor] = false;
+    }
+
+    function _setGovernanceStrategy(address governanceStrategy) internal {
+        _governanceStrategy = governanceStrategy;
+
+        emit GovernanceStrategyChanged(governanceStrategy, msg.sender);
+    }
+
+    function _setStakingDelay(uint256 stakingDelay) internal {
+        _stakingDelay = stakingDelay;
+
+        emit StakingDelayChanged(stakingDelay, msg.sender);
+    }
+
+    function getGovernanceStrategy() external view override returns (address) {
+        return _governanceStrategy;
+    }
+
+    function getStakingDelay() external view override returns (uint256) {
+        return _stakingDelay;
+    }
+
+    function getProposalsCount() external view override returns (uint256) {
+        return _proposalsCount;
     }
 }

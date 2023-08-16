@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import {IGovernance} from "../interfaces/IGovernance.sol";
 import {IExecutor} from "../interfaces/IExecutor.sol";
+import {Validator} from "./Validator.sol";
 
-contract Executor is IExecutor {
+contract Executor is IExecutor, Validator{
     uint256 public immutable override GRACE_PERIOD;
     uint256 public immutable override MINIMUM_DELAY;
     uint256 public immutable override MAXIMUM_DELAY;
@@ -20,8 +21,13 @@ contract Executor is IExecutor {
         uint256 delay,
         uint256 gracePeriod,
         uint256 minimumDelay,
-        uint256 maximumDelay
-    ) {
+        uint256 maximumDelay,
+        address token,
+        uint256 propositionThreshold
+        // uint256 votingDuration,
+        // uint256 voteDifferential,
+        // uint256 minimumQuorum
+    ) Validator(token,propositionThreshold){
         require(delay >= minimumDelay, "DELAY_SHORTER_THAN_MINIMUM");
         require(delay <= maximumDelay, "DELAY_LONGER_THAN_MAXIMUM");
         _delay = delay;
@@ -40,7 +46,7 @@ contract Executor is IExecutor {
         _;
     }
 
-    modifier onlyTimelock() {
+    modifier onlyExecutor() {
         require(msg.sender == address(this), "ONLY_BY_THIS_TIMELOCK");
         _;
     }
@@ -54,7 +60,7 @@ contract Executor is IExecutor {
      * @dev Set the delay
      * @param delay delay between queue and execution of proposal
      **/
-    function setDelay(uint256 delay) public onlyTimelock {
+    function setDelay(uint256 delay) public onlyExecutor {
         _validateDelay(delay);
         _delay = delay;
 
@@ -76,7 +82,7 @@ contract Executor is IExecutor {
      * Can only be called by this executor (i.e via proposal)
      * @param newPendingAdmin address of the new admin
      **/
-    function setPendingAdmin(address newPendingAdmin) public onlyTimelock {
+    function setPendingAdmin(address newPendingAdmin) public onlyExecutor {
         _pendingAdmin = newPendingAdmin;
 
         emit NewPendingAdmin(newPendingAdmin);
