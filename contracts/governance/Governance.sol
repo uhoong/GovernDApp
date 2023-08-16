@@ -3,84 +3,13 @@ pragma solidity ^0.8.0;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import {IReview} from "../interfaces/IReview.sol";
 import {IExecutor} from "../interfaces/IExecutor.sol";
 import {IGovernance} from "../interfaces/IGovernance.sol";
 import {IValidator} from "../interfaces/IValidator.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Governance is Ownable, IGovernance {
-    enum ProposalState {
-        Staking,
-        Canceled,
-        Active,
-        Failed,
-        Succeeded,
-        Expired,
-        Executed,
-        Queued
-    }
-
-    struct Proposal {
-        uint256 id;
-        address creator;
-        uint256 proposalType; //暂时没用的字段
-        IExecutor executor;
-        address[] targets;
-        uint256[] values;
-        string[] signatures;
-        bytes[] calldatas;
-        bool[] withDelegatecalls;
-        uint256 startBlock; //提案在创建后，会有几天的等待时间
-        uint256 endBlock; //在endblock前可以投票
-        uint256 executionBlock; //在executionBlock后才可以执行
-        bool executed;
-        bool canceled;
-        // bool voteReview;
-        //如果为 true，提案由预测市场决定，否则由投票决定。TODO：是否加入预测市场辅助的评议方式
-        bool marketReview; //暂时没用的字段
-        uint256 stakeAmount; //暂时没用的字段
-        bytes32 ipfsHash;
-        mapping(address => uint256) stakes; //暂时没用的字段
-    }
-
-    struct ProposalInfo {
-        uint256 id;
-        address creator;
-        uint256 proposalType; //暂时没用的字段
-        IExecutor executor;
-        address[] targets;
-        uint256[] values;
-        string[] signatures;
-        bytes[] calldatas;
-        bool[] withDelegatecalls;
-        uint256 startBlock;
-        uint256 endBlock;
-        uint256 executionBlock;
-        bool executed;
-        bool canceled;
-        bool marketReview;
-        uint256 stakeAmount;
-        bytes32 ipfsHash;
-    }
-
-    event ProposalCreated(
-        uint256 id,
-        address indexed creator,
-        uint256 proposalType,
-        IExecutor indexed executor,
-        address[] targets,
-        uint256[] values,
-        string[] signatures,
-        bytes[] calldatas,
-        bool[] withDelegatecalls,
-        uint256 startBlock,
-        uint256 endBlock,
-        bytes32 ipfsHash
-    );
-
-    event ProposalCanceled(uint256 id);
-
     // 主代码
     using SafeMath for uint256;
 
@@ -89,6 +18,7 @@ contract Governance is Ownable, IGovernance {
     uint256 private _proposalsCount;
 
     uint256 private _stakeDelay;
+    address private _governanceStrategy;
     // uint256 private _reviewDuration;
     // uint256 private _executeDelay;
 
@@ -96,7 +26,7 @@ contract Governance is Ownable, IGovernance {
     IERC20 public immutable governanceToken;
     IReview public immutable review;
 
-    constructor(IERC20 _governanceToken,IReview _review) {
+    constructor(IERC20 _governanceToken, IReview _review) {
         _stakeDelay = 7200;
         // _reviewDuration = 19200;
         // _executeDelay = 7200;
@@ -153,8 +83,12 @@ contract Governance is Ownable, IGovernance {
         newProposal.withDelegatecalls = withDelegatecalls;
 
         newProposal.startBlock = block.number + _stakeDelay;
-        newProposal.endBlock = newProposal.startBlock + review.REVIEW_DURATION();
+        newProposal.endBlock =
+            newProposal.startBlock +
+            review.REVIEW_DURATION();
         // newProposal.executionBlock = newProposal.endBlock + _executeDelay;
+
+        newProposal.strategy = _governanceStrategy;
 
         newProposal.ipfsHash = ipfsHash;
 
@@ -172,6 +106,7 @@ contract Governance is Ownable, IGovernance {
             withDelegatecalls,
             newProposal.startBlock,
             newProposal.endBlock,
+            newProposal.strategy,
             ipfsHash
         );
 
@@ -191,7 +126,8 @@ contract Governance is Ownable, IGovernance {
         require(
             IValidator(address(proposal.executor)).validateProposalCancellation(
                 this,
-                proposal.creator
+                proposal.creator,
+                block.number - 1
             ),
             "PROPOSITION_CANCELLATION_INVALID"
         );
@@ -202,13 +138,45 @@ contract Governance is Ownable, IGovernance {
                 proposal.values[i],
                 proposal.signatures[i],
                 proposal.calldatas[i],
-                proposal.executionTime,
+                proposal.executionBlock,
                 proposal.withDelegatecalls[i]
             );
         }
 
         emit ProposalCanceled(proposalId);
     }
+
+    // function cancel(uint256 proposalId) external override {
+    //     ProposalState state = getProposalState(proposalId);
+    //     require(
+    //         state != ProposalState.Executed &&
+    //             state != ProposalState.Canceled &&
+    //             state != ProposalState.Expired,
+    //         "ONLY_BEFORE_EXECUTED"
+    //     );
+
+    //     Proposal storage proposal = _proposals[proposalId];
+    //     require(
+    //         IValidator(address(proposal.executor)).validateProposalCancellation(
+    //             this,
+    //             proposal.creator
+    //         ),
+    //         "PROPOSITION_CANCELLATION_INVALID"
+    //     );
+    //     proposal.canceled = true;
+    //     for (uint256 i = 0; i < proposal.targets.length; i++) {
+    //         proposal.executor.cancelTransaction(
+    //             proposal.targets[i],
+    //             proposal.values[i],
+    //             proposal.signatures[i],
+    //             proposal.calldatas[i],
+    //             proposal.executionBlock,
+    //             proposal.withDelegatecalls[i]
+    //         );
+    //     }
+
+    //     emit ProposalCanceled(proposalId);
+    // }
 
     // function stake(uint256 proposalId, uint256 amount) external {
     //     ProposalState state = getProposalState(proposalId);
@@ -265,50 +233,127 @@ contract Governance is Ownable, IGovernance {
         return _authorizedExecutors[executor];
     }
 
-    function execute(uint256 proposalId) external payable {
+    function queue(uint256 proposalId) external override {
         require(
             getProposalState(proposalId) == ProposalState.Succeeded,
-            "INVALID_STATE_FOR_EXECUTE"
+            "INVALID_STATE_FOR_QUEUE"
         );
         Proposal storage proposal = _proposals[proposalId];
-        require(
-            block.timestamp >= proposal.executionBlock,
-            "TIMELOCK_NOT_FINISHED"
-        );
-        require(
-            block.timestamp <= proposal.executionBlock.add(GRACE_PERIOD),
-            "GRACE_PERIOD_FINISHED"
-        );
-
-        bool success;
-        bytes memory callData;
-        bytes memory resultData;
-
+        uint256 executionBlock = block.number + proposal.executor.getDelay();
         for (uint256 i = 0; i < proposal.targets.length; i++) {
-            if (bytes(proposal.signatures[i]).length == 0) {
-                callData = proposal.calldatas[i];
-            } else {
-                callData = abi.encodePacked(
-                    bytes4(keccak256(bytes(proposal.signatures[i]))),
-                    proposal.calldatas[i]
-                );
-            }
-
-            if (proposal.withDelegatecalls[i]) {
-                require(
-                    msg.value >= proposal.values[i],
-                    "NOT_ENOUGH_MSG_VALUE"
-                );
-                (success, resultData) = proposal.targets[i].delegatecall(
-                    callData
-                );
-            } else {
-                (success, resultData) = proposal.targets[i].call{
-                    value: proposal.values[i]
-                }(callData);
-            }
+            _queueOrRevert(
+                proposal.executor,
+                proposal.targets[i],
+                proposal.values[i],
+                proposal.signatures[i],
+                proposal.calldatas[i],
+                executionBlock,
+                proposal.withDelegatecalls[i]
+            );
         }
+        proposal.executionBlock = executionBlock;
+
+        emit ProposalQueued(proposalId, executionBlock, msg.sender);
     }
+
+    function _queueOrRevert(
+        IExecutor executor,
+        address target,
+        uint256 value,
+        string memory signature,
+        bytes memory callData,
+        uint256 executionBlock,
+        bool withDelegatecall
+    ) internal {
+        require(
+            !executor.isActionQueued(
+                keccak256(
+                    abi.encode(
+                        target,
+                        value,
+                        signature,
+                        callData,
+                        executionBlock,
+                        withDelegatecall
+                    )
+                )
+            ),
+            "DUPLICATED_ACTION"
+        );
+        executor.queueTransaction(
+            target,
+            value,
+            signature,
+            callData,
+            executionBlock,
+            withDelegatecall
+        );
+    }
+
+    function execute(uint256 proposalId) external payable override {
+        require(
+            getProposalState(proposalId) == ProposalState.Queued,
+            "ONLY_QUEUED_PROPOSALS"
+        );
+        Proposal storage proposal = _proposals[proposalId];
+        proposal.executed = true;
+        for (uint256 i = 0; i < proposal.targets.length; i++) {
+            proposal.executor.executeTransaction{value: proposal.values[i]}(
+                proposal.targets[i],
+                proposal.values[i],
+                proposal.signatures[i],
+                proposal.calldatas[i],
+                proposal.executionBlock,
+                proposal.withDelegatecalls[i]
+            );
+        }
+        emit ProposalExecuted(proposalId, msg.sender);
+    }
+
+    // function execute(uint256 proposalId) external payable {
+    //     require(
+    //         getProposalState(proposalId) == ProposalState.Succeeded,
+    //         "INVALID_STATE_FOR_EXECUTE"
+    //     );
+    //     Proposal storage proposal = _proposals[proposalId];
+    //     require(
+    //         block.timestamp >= proposal.executionBlock,
+    //         "TIMELOCK_NOT_FINISHED"
+    //     );
+    //     require(
+    //         block.timestamp <= proposal.executionBlock.add(GRACE_PERIOD),
+    //         "GRACE_PERIOD_FINISHED"
+    //     );
+
+    //     bool success;
+    //     bytes memory callData;
+    //     bytes memory resultData;
+
+    //     for (uint256 i = 0; i < proposal.targets.length; i++) {
+    //         if (bytes(proposal.signatures[i]).length == 0) {
+    //             callData = proposal.calldatas[i];
+    //         } else {
+    //             callData = abi.encodePacked(
+    //                 bytes4(keccak256(bytes(proposal.signatures[i]))),
+    //                 proposal.calldatas[i]
+    //             );
+    //         }
+
+    //         if (proposal.withDelegatecalls[i]) {
+    //             require(
+    //                 msg.value >= proposal.values[i],
+    //                 "NOT_ENOUGH_MSG_VALUE"
+    //             );
+    //             (success, resultData) = proposal.targets[i].delegatecall(
+    //                 callData
+    //             );
+    //         } else {
+    //             (success, resultData) = proposal.targets[i].call{
+    //                 value: proposal.values[i]
+    //             }(callData);
+    //         }
+    //     }
+    // }
 
     // 提案执行相关函数，governance 合约负责 executor 合约执行交易，具体的执行过程由 executor 合约执行
     function _authorizeExecutor(address executor) internal {
@@ -325,8 +370,8 @@ contract Governance is Ownable, IGovernance {
             getProposalState(proposalId) == ProposalState.Active,
             "REVIEW_CLOSED"
         );
-        Proposal storage proposal = _proposals[proposalId];
-        return review.createReview(proposalId,proposal.endBlock);
+        // Proposal storage proposal = _proposals[proposalId];
+        review.createReview(address(this),proposalId);
     }
 
     // 提案信息获取
@@ -343,7 +388,8 @@ contract Governance is Ownable, IGovernance {
             return ProposalState.Active;
         } else if (
             !IValidator(address(proposal.executor)).isProposalPassed(
-                this,
+                address(this),
+                review,
                 proposalId
             )
         ) {
@@ -353,10 +399,7 @@ contract Governance is Ownable, IGovernance {
         } else if (proposal.executed) {
             return ProposalState.Executed;
         } else if (
-            IValidator(address(proposal.executor)).isProposalOverGracePeriod(
-                this,
-                proposalId
-            )
+            proposal.executor.isProposalOverGracePeriod(this, proposalId)
         ) {
             return ProposalState.Expired;
         }
@@ -369,6 +412,7 @@ contract Governance is Ownable, IGovernance {
         ProposalInfo memory proposalInfo = ProposalInfo({
             id: proposal.id,
             creator: proposal.creator,
+            proposalType: proposal.proposalType,
             executor: proposal.executor,
             targets: proposal.targets,
             values: proposal.values,
@@ -382,6 +426,7 @@ contract Governance is Ownable, IGovernance {
             canceled: proposal.canceled,
             marketReview: proposal.marketReview,
             stakeAmount: proposal.stakeAmount,
+            strategy:proposal.strategy,
             ipfsHash: proposal.ipfsHash
         });
         return proposalInfo;

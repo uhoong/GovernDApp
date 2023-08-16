@@ -4,39 +4,28 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-import {IGovernacne} from "../interfaces/IGovernacne.sol";
-import {IGovernToken} from "../interfaces/token/IGovernToken.sol";
-// import {IVotingStrategy} from "../interfaces/IVotingStrategy.sol";
+import {IGovernance} from "../interfaces/IGovernance.sol";
+import {IVote} from "../interfaces/factory/IVote.sol";
+import {IVotingStrategy} from "../interfaces/IVotingStrategy.sol";
+
 
 contract TimeTokenVote is Initializable, IVote {
     uint256 public forVotes;
     uint256 public againstVotes;
-    uint256 public startBlock;
-    uint256 public endBlock;
-    IGovernacne public governance;
-    IGovernToken public token;
+    IGovernance public governance;
 
     mapping(address => Vote) public votes;
 
     function initialize(
-        address _governance,
-        address _token,
-        uint256 _startBlock,
-        uint256 _endBlock
+        address _governance
     ) public initializer {
-        _initialize(_governance, _token,_startBlock, _endBlock);
+        _initialize(_governance);
     }
 
     function _initialize(
-        address _governance,
-        address _token,
-        uint256 _startBlock,
-        uint256 _endBlock
+        address _governance
     ) internal {
-        governance = IGovernacne(_governance);
-        token = IGovernToken(_token);
-        startBlock = _startBlock;
-        endBlock = _endBlock;
+        governance = IGovernance(_governance);
     }
 
     function castVote(uint256 proposalId, bool support) public {
@@ -49,16 +38,17 @@ contract TimeTokenVote is Initializable, IVote {
         bool support
     ) internal {
         require(
-            governance.getProposalState(proposalId) == ProposalState.Active,
+            governance.getProposalState(proposalId) == IGovernance.ProposalState.Active,
             "VOTING_CLOSED"
         );
+        IGovernance.ProposalInfo memory proposal = governance.getProposalById(proposalId);
         // Proposal storage proposal = _proposals[proposalId];
         Vote storage vote = votes[voter];
 
         require(vote.votingPower == 0, "VOTE_ALREADY_SUBMITTED");
 
         uint256 votingPower = IVotingStrategy(proposal.strategy)
-            .getVotingPowerAt(voter, startBlock);
+            .getVotingPowerAt(voter, proposal.startBlock);
 
         if (support) {
             forVotes = forVotes + votingPower;
@@ -67,15 +57,15 @@ contract TimeTokenVote is Initializable, IVote {
         }
 
         vote.support = support;
-        vote.votingPower = uint248(votingPower);
+        vote.votingPower = votingPower;
     }
 
-    // function isProposalPassed() public view returns (bool) {
-    //     return (isQuorumValid() && isVoteDifferentialValid());
-    // }
+    function isProposalPassed() public view returns (bool) {
+        return forVotes>againstVotes;
+    }
 
     // function isQuorumValid() public view override returns (bool) {
-    //     IAaveGovernanceV2.ProposalWithoutVotes memory proposal = governance
+    //     IGovernance.ProposalInfo memory proposal = governance
     //         .getProposalById(proposalId);
     //     uint256 votingSupply = IGovernanceStrategy(proposal.strategy)
     //         .getTotalVotingSupplyAt(proposal.startBlock);
@@ -83,22 +73,25 @@ contract TimeTokenVote is Initializable, IVote {
     //     return forVotes >= getMinimumVotingPowerNeeded(votingSupply);
     // }
 
+    // function getMinimumVotingPowerNeeded(
+    //     uint256 votingSupply
+    // ) public view override returns (uint256) {
+    //     return votingSupply*MINIMUM_QUORUM/ONE_HUNDRED_WITH_PRECISION;
+    // }
+
     // function isVoteDifferentialValid(
-    //     IAaveGovernanceV2 governance,
+    //     IGovernance governance,
     //     uint256 proposalId
     // ) public view override returns (bool) {
-    //     IAaveGovernanceV2.ProposalWithoutVotes memory proposal = governance
-    //         .getProposalById(proposalId);
+    //     IGovernance.ProposalInfo memory proposal = governance.getProposalById(
+    //         proposalId
+    //     );
     //     uint256 votingSupply = IGovernanceStrategy(proposal.strategy)
     //         .getTotalVotingSupplyAt(proposal.startBlock);
-
-    //     return (proposal.forVotes.mul(ONE_HUNDRED_WITH_PRECISION).div(
-    //         votingSupply
-    //     ) >
-    //         proposal
-    //             .againstVotes
-    //             .mul(ONE_HUNDRED_WITH_PRECISION)
-    //             .div(votingSupply)
-    //             .add(VOTE_DIFFERENTIAL));
+    //     return
+    //         ((forVotes * ONE_HUNDRED_WITH_PRECISION) / votingSupply) >
+    //         (againstVotes * ONE_HUNDRED_WITH_PRECISION) /
+    //             votingSupply +
+    //             VOTE_DIFFERENTIAL;
     // }
 }

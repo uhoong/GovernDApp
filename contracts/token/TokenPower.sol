@@ -17,18 +17,10 @@ contract TimeTokenPower{
         uint newBalance
     );
 
-    mapping(address => address) public delegates;
-
-    mapping(address => uint256) public power;       //类似于 balance，并不用于直接计算投票权力
-
     struct Checkpoint {
         uint256 fromBlock;
         uint256 votes;
     }
-
-    mapping(address => mapping(uint256 => Checkpoint)) public checkpoints;
-
-    mapping(address => uint256) public numCheckpoints;
 
     struct TimeToken {
         uint256 stakeFromBlock;
@@ -41,6 +33,18 @@ contract TimeTokenPower{
     IERC20 public immutable PanGu;
 
     uint256 public immutable lockTimeLimit;
+
+    uint256 public totalVotingSupplyAt;
+
+    mapping(address => mapping(uint256 => Checkpoint)) public checkpoints;
+
+    mapping(address => uint256) public numCheckpoints;
+
+    mapping(address => address) public delegates;
+
+    mapping(address => uint256) public power;       //类似于 balance，并不用于直接计算投票权力
+
+    
 
     mapping(address=>uint256) public lockedPower;
 
@@ -194,7 +198,7 @@ contract TimeTokenPower{
             nCheckpoints > 0 ? checkpoints[user][nCheckpoints - 1].votes : 0;
     }
 
-    function getPriorVotingPower(
+    function getVotingPowerAt(
         address user,
         uint blockNumber
     ) public view returns (uint256) {

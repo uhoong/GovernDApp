@@ -47,13 +47,13 @@ contract GovernToken is ERC20{
         return _delegate(msg.sender, delegatee);
     }
 
-    function getCurrentVotes(address account) external view returns (uint256) {
+    function getCurrentVotingPower(address account) external view returns (uint256) {
         uint256 nCheckpoints = numCheckpoints[account];
         return
             nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
 
-    function getPriorVotes(
+    function getVotingPowerAt(
         address account,
         uint blockNumber
     ) public view returns (uint256) {

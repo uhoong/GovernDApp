@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IGovernance} from "./IGovernance.sol";
+import {IReview} from "./IReview.sol";
 
 interface IValidator {
     function PROPOSITION_THRESHOLD() external view returns (uint256);
@@ -28,7 +29,8 @@ interface IValidator {
 
     function validateProposalCancellation(
         IGovernance governance,
-        address user
+        address user,
+        uint256 blockNumber
     ) external view returns (bool);
 
     function validateCreateOfMarket(
@@ -37,19 +39,13 @@ interface IValidator {
     ) external view returns (bool);
 
     function isProposalPassed(
-        IGovernance governance,
-        uint256 proposalId
+        address governance,IReview review,uint256 proposalId
     ) external view returns (bool);
 
-    function isQuorumValid(
-        IGovernance governance,
-        uint256 proposalId
-    ) external view returns (bool);
-
-    function isProposalOverGracePeriod(
-        IGovernance governance,
-        uint256 proposalId
-    ) external view returns (bool);
+    // function isQuorumValid(
+    //     IGovernance governance,
+    //     uint256 proposalId
+    // ) external view returns (bool);
 
     function getMinimumPowerNeeded(
         IGovernance governance,

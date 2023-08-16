@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 interface IVote{
     struct Vote{
         bool support;
-        uint248 votingPower;
+        uint256 votingPower;
     }
 
     function isProposalPassed() external view returns(bool);

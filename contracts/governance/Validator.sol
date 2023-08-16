@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IValidator} from "../interfaces/IValidator.sol";
+import {IReview} from "../interfaces/IReview.sol";
 import {IGovernance} from "../interfaces/IGovernance.sol";
 import {GovernToken} from "../token/GovernToken.sol";
 
@@ -49,17 +50,16 @@ contract Validator is IValidator {
         address user
     ) external view returns (bool) {}
 
-    function isProposalPassed(
-        IGovernance governance,
-        uint256 proposalId
-    ) external view returns (bool) {
-        
+    function isProposalPassed(address governance,IReview review,uint256 proposalId) external view returns(bool){
+        return review.isProposalPassed(governance,proposalId);
     }
 
-    function isProposalOverGracePeriod(
-        IGovernance governance,
-        uint256 proposalId
-    ) external view returns (bool) {}
+    // function isProposalPassed(
+    //     IGovernance governance,
+    //     uint256 proposalId
+    // ) external view returns (bool) {
+        
+    // }
 
     function getMinimumPowerNeeded(
         IGovernance governance,
@@ -76,7 +76,7 @@ contract Validator is IValidator {
         uint256 blockNumber
     ) public view override returns (bool) {
         return
-            GT.getPriorVotes(user, blockNumber) >=
+            GT.getVotingPowerAt(user, blockNumber) >=
             getMinimumPowerNeeded(governance, blockNumber);
     }
 }
