@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 // import {TimeTokenSuit} from "./HoldingTime.sol";
 
-contract GovernToken is ERC20{
+contract GovernToken is ERC20 {
     mapping(address => address) public delegates;
 
     struct Checkpoint {
@@ -34,20 +35,23 @@ contract GovernToken is ERC20{
         emit Transfer(address(0), account, 10000000e18);
     }
 
-    
-
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal override {
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
         _moveDelegates(delegates[from], delegates[to], amount);
         // _removeTimeToken(from,amount);
         // _addTimeToken(to,amount);
     }
 
-    
     function delegate(address delegatee) public {
         return _delegate(msg.sender, delegatee);
     }
 
-    function getCurrentVotingPower(address account) external view returns (uint256) {
+    function getCurrentVotingPower(
+        address account
+    ) external view returns (uint256) {
         uint256 nCheckpoints = numCheckpoints[account];
         return
             nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;

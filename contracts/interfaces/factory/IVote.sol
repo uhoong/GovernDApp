@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-interface IVote{
-    struct Vote{
+interface IVote {
+    struct Vote {
         bool support;
         uint256 votingPower;
     }
 
-    function isProposalPassed() external view returns(bool);
+    function isProposalPassed() external view returns (bool);
 }

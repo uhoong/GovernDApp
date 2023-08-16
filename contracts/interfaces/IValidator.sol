@@ -39,7 +39,9 @@ interface IValidator {
     ) external view returns (bool);
 
     function isProposalPassed(
-        address governance,IReview review,uint256 proposalId
+        address governance,
+        IReview review,
+        uint256 proposalId
     ) external view returns (bool);
 
     // function isQuorumValid(

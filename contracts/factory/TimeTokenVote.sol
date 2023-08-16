@@ -8,7 +8,6 @@ import {IGovernance} from "../interfaces/IGovernance.sol";
 import {IVote} from "../interfaces/factory/IVote.sol";
 import {IVotingStrategy} from "../interfaces/IVotingStrategy.sol";
 
-
 contract TimeTokenVote is Initializable, IVote {
     uint256 public forVotes;
     uint256 public againstVotes;
@@ -16,15 +15,11 @@ contract TimeTokenVote is Initializable, IVote {
 
     mapping(address => Vote) public votes;
 
-    function initialize(
-        address _governance
-    ) public initializer {
+    function initialize(address _governance) public initializer {
         _initialize(_governance);
     }
 
-    function _initialize(
-        address _governance
-    ) internal {
+    function _initialize(address _governance) internal {
         governance = IGovernance(_governance);
     }
 
@@ -38,10 +33,13 @@ contract TimeTokenVote is Initializable, IVote {
         bool support
     ) internal {
         require(
-            governance.getProposalState(proposalId) == IGovernance.ProposalState.Active,
+            governance.getProposalState(proposalId) ==
+                IGovernance.ProposalState.Active,
             "VOTING_CLOSED"
         );
-        IGovernance.ProposalInfo memory proposal = governance.getProposalById(proposalId);
+        IGovernance.ProposalInfo memory proposal = governance.getProposalById(
+            proposalId
+        );
         // Proposal storage proposal = _proposals[proposalId];
         Vote storage vote = votes[voter];
 
@@ -61,7 +59,7 @@ contract TimeTokenVote is Initializable, IVote {
     }
 
     function isProposalPassed() public view returns (bool) {
-        return forVotes>againstVotes;
+        return forVotes > againstVotes;
     }
 
     // function isQuorumValid() public view override returns (bool) {

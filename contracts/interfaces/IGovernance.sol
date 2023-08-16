@@ -79,7 +79,11 @@ interface IGovernance {
 
     event ProposalCanceled(uint256 id);
 
-    event ProposalQueued(uint256 id, uint256 executionBlock, address indexed initiatorQueueing);
+    event ProposalQueued(
+        uint256 id,
+        uint256 executionBlock,
+        address indexed initiatorQueueing
+    );
 
     event ProposalExecuted(uint256 id, address indexed initiatorExecution);
 
@@ -111,7 +115,9 @@ interface IGovernance {
 
     function unauthorizeExecutors(address[] memory executors) external;
 
-    function isExecutorAuthorized(address executor) external view returns (bool);
+    function isExecutorAuthorized(
+        address executor
+    ) external view returns (bool);
 
     function queue(uint256 proposalId) external;
 
@@ -120,7 +126,11 @@ interface IGovernance {
     function createReview(uint256 proposalId) external;
 
     // 合约状态
-    function getProposalState(uint256 proposalId) external view returns (ProposalState);
+    function getProposalState(
+        uint256 proposalId
+    ) external view returns (ProposalState);
 
-    function getProposalById(uint256 proposalId) external view returns (ProposalInfo memory);
+    function getProposalById(
+        uint256 proposalId
+    ) external view returns (ProposalInfo memory);
 }

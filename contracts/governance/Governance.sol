@@ -371,7 +371,7 @@ contract Governance is Ownable, IGovernance {
             "REVIEW_CLOSED"
         );
         // Proposal storage proposal = _proposals[proposalId];
-        review.createReview(address(this),proposalId);
+        review.createReview(address(this), proposalId);
     }
 
     // 提案信息获取
@@ -426,7 +426,7 @@ contract Governance is Ownable, IGovernance {
             canceled: proposal.canceled,
             marketReview: proposal.marketReview,
             stakeAmount: proposal.stakeAmount,
-            strategy:proposal.strategy,
+            strategy: proposal.strategy,
             ipfsHash: proposal.ipfsHash
         });
         return proposalInfo;

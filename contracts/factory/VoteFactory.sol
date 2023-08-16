@@ -13,14 +13,18 @@ contract VoteFactory {
         timeTokenVoteImplementation = new TimeTokenVote();
     }
 
-    function createVote(address governance,uint256 proposalId) public returns (address) {
-        return createTimeTokenVote(governance,proposalId);
+    function createVote(
+        address governance,
+        uint256 proposalId
+    ) public returns (address) {
+        return createTimeTokenVote(governance, proposalId);
     }
 
     function createTimeTokenVote(
-        address governance,uint256 proposalId
+        address governance,
+        uint256 proposalId
     ) public returns (address ret) {
-        address addr = getAddress(governance,proposalId);
+        address addr = getAddress(governance, proposalId);
         uint codeSize = addr.code.length;
         if (codeSize > 0) {
             return payable(addr);
@@ -33,7 +37,10 @@ contract VoteFactory {
         );
     }
 
-    function getAddress(address governance,uint256 proposalId) public view returns (address) {
+    function getAddress(
+        address governance,
+        uint256 proposalId
+    ) public view returns (address) {
         return
             Create2.computeAddress(
                 bytes32(proposalId),
@@ -42,7 +49,10 @@ contract VoteFactory {
                         type(ERC1967Proxy).creationCode,
                         abi.encode(
                             address(timeTokenVoteImplementation),
-                            abi.encodeCall(TimeTokenVote.initialize, (governance))
+                            abi.encodeCall(
+                                TimeTokenVote.initialize,
+                                (governance)
+                            )
                         )
                     )
                 )

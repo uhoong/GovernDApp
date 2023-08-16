@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {IGovernance} from "../interfaces/IGovernance.sol";
 import {IExecutor} from "../interfaces/IExecutor.sol";
 
-contract Executor is IExecutor{
+contract Executor is IExecutor {
     uint256 public immutable override GRACE_PERIOD;
     uint256 public immutable override MINIMUM_DELAY;
     uint256 public immutable override MAXIMUM_DELAY;
@@ -91,7 +91,7 @@ contract Executor is IExecutor{
         bool withDelegatecall
     ) public override onlyAdmin returns (bytes32) {
         require(
-            executionBlock >= block.number+_delay,
+            executionBlock >= block.number + _delay,
             "EXECUTION_TIME_UNDERESTIMATED"
         );
 
@@ -172,7 +172,7 @@ contract Executor is IExecutor{
         require(_queuedTransactions[actionHash], "ACTION_NOT_QUEUED");
         require(block.number >= executionBlock, "TIMELOCK_NOT_FINISHED");
         require(
-            block.number <= executionBlock+GRACE_PERIOD,
+            block.number <= executionBlock + GRACE_PERIOD,
             "GRACE_PERIOD_FINISHED"
         );
 
@@ -262,10 +262,11 @@ contract Executor is IExecutor{
         IGovernance governance,
         uint256 proposalId
     ) external view override returns (bool) {
-        IGovernance.ProposalInfo memory proposal = governance
-            .getProposalById(proposalId);
+        IGovernance.ProposalInfo memory proposal = governance.getProposalById(
+            proposalId
+        );
 
-        return (block.number > proposal.executionBlock+GRACE_PERIOD);
+        return (block.number > proposal.executionBlock + GRACE_PERIOD);
     }
 
     function _validateDelay(uint256 delay) internal view {

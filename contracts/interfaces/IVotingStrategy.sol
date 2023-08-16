@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IVotingStrategy{
-    function getVotingPowerAt(address user,uint256 blockNumber) external returns(uint256);
+interface IVotingStrategy {
+    function getVotingPowerAt(
+        address user,
+        uint256 blockNumber
+    ) external returns (uint256);
 }

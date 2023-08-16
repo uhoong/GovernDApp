@@ -3,8 +3,7 @@ pragma solidity ^0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract TimeTokenPower{
-
+contract TimeTokenPower {
     event DelegateChanged(
         address indexed delegator,
         address indexed fromDelegate,
@@ -42,88 +41,108 @@ contract TimeTokenPower{
 
     mapping(address => address) public delegates;
 
-    mapping(address => uint256) public power;       //类似于 balance，并不用于直接计算投票权力
+    mapping(address => uint256) public power; //类似于 balance，并不用于直接计算投票权力
 
-    
+    mapping(address => uint256) public lockedPower;
 
-    mapping(address=>uint256) public lockedPower;
+    mapping(address => uint256) public tokenIds;
 
-    mapping(address=>uint256) public tokenIds;
+    mapping(address => mapping(uint256 => TimeToken)) public timeTokens;
 
-    mapping(address=>mapping(uint256=>TimeToken)) public timeTokens;
-
-    constructor(address pangu,uint256 _lockTimeLimit){
+    constructor(address pangu, uint256 _lockTimeLimit) {
         PanGu = IERC20(pangu);
         lockTimeLimit = _lockTimeLimit;
     }
 
-    function stake(uint256 amount) public{
-        require(amount>0,"INVALID_AMOUNT");
-        PanGu.transferFrom(msg.sender,address(this),amount);
+    function stake(uint256 amount) public {
+        require(amount > 0, "INVALID_AMOUNT");
+        PanGu.transferFrom(msg.sender, address(this), amount);
         uint256 tokenId = tokenIds[msg.sender];
-        tokenIds[msg.sender]+=1;
-        _stake(msg.sender,amount,tokenId);
+        tokenIds[msg.sender] += 1;
+        _stake(msg.sender, amount, tokenId);
     }
 
-    function stackById(uint256 amount,uint256 tokenId) public{
-        require(amount>0,"INVALID_AMOUNT");
+    function stackById(uint256 amount, uint256 tokenId) public {
+        require(amount > 0, "INVALID_AMOUNT");
         TimeToken storage timeToken = timeTokens[msg.sender][tokenId];
-        require(timeToken.amount==0,"TIMETOKEN_EXIST");
-        PanGu.transferFrom(msg.sender,address(this),amount);
-        _stake(msg.sender,amount,tokenId);
+        require(timeToken.amount == 0, "TIMETOKEN_EXIST");
+        PanGu.transferFrom(msg.sender, address(this), amount);
+        _stake(msg.sender, amount, tokenId);
     }
 
-    function _stake(address user,uint256 amount,uint256 tokenId) public{
-        timeTokens[user][tokenId] = TimeToken(block.number,amount,false,0,0);
+    function _stake(address user, uint256 amount, uint256 tokenId) public {
+        timeTokens[user][tokenId] = TimeToken(
+            block.number,
+            amount,
+            false,
+            0,
+            0
+        );
     }
 
-    function depositById(uint256 amount,uint256 tokenId) public{
+    function depositById(uint256 amount, uint256 tokenId) public {
         TimeToken storage timeToken = timeTokens[msg.sender][tokenId];
-        require(timeToken.amount>amount,"INVALID_AMOUNT");
-        if(timeToken.locked){
-            _unlock(msg.sender,tokenId);
+        require(timeToken.amount > amount, "INVALID_AMOUNT");
+        if (timeToken.locked) {
+            _unlock(msg.sender, tokenId);
         }
-        timeToken.amount-=amount;
-        
-        PanGu.transfer(msg.sender,amount);
+        timeToken.amount -= amount;
+
+        PanGu.transfer(msg.sender, amount);
     }
 
-    function lock(uint256 tokenId,uint256 lockTime,address delegatee) public{
-        _lock(msg.sender,tokenId,lockTime,delegatee);
+    function lock(uint256 tokenId, uint256 lockTime, address delegatee) public {
+        _lock(msg.sender, tokenId, lockTime, delegatee);
     }
 
-    function _lock(address user,uint256 tokenId,uint256 lockTime,address delegatee) public {
+    function _lock(
+        address user,
+        uint256 tokenId,
+        uint256 lockTime,
+        address delegatee
+    ) public {
         TimeToken storage timeToken = timeTokens[user][tokenId];
-        require(timeToken.amount>0,"NULL_TIMETOKEN");
-        require(lockTime<lockTimeLimit,"INVALID_LOCKTIME");
-        require(!timeToken.locked,"TIMETOKEN_LOCKED");
+        require(timeToken.amount > 0, "NULL_TIMETOKEN");
+        require(lockTime < lockTimeLimit, "INVALID_LOCKTIME");
+        require(!timeToken.locked, "TIMETOKEN_LOCKED");
         timeToken.locked = true;
-        timeToken.lockFromBlock=block.number;
-        timeToken.lockTime=lockTime;
-        power[user]+=timeToken.amount*(block.number-timeToken.stakeFromBlock+2*lockTime);   //只记录锁定时长不够，还需要记录锁定区块高度
-        _delegate(user,delegatee);
+        timeToken.lockFromBlock = block.number;
+        timeToken.lockTime = lockTime;
+        power[user] +=
+            timeToken.amount *
+            (block.number - timeToken.stakeFromBlock + 2 * lockTime); //只记录锁定时长不够，还需要记录锁定区块高度
+        _delegate(user, delegatee);
     }
 
-    function unlock(uint256 tokenId) public{
-        _unlock(msg.sender,tokenId);
+    function unlock(uint256 tokenId) public {
+        _unlock(msg.sender, tokenId);
     }
 
-    function _unlock(address user,uint256 tokenId)  public{
+    function _unlock(address user, uint256 tokenId) public {
         TimeToken storage timeToken = timeTokens[user][tokenId];
-        require(timeToken.amount>0,"NULL_TIMETOKEN");
-        require(timeToken.lockFromBlock+timeToken.lockTime>block.number,"LOCKING");
-        require(timeToken.locked,"ALREADY_UNLOCK");
-        timeToken.locked=false;
-        power[user]-=timeToken.lockFromBlock-timeToken.stakeFromBlock+timeToken.lockTime*2;
-        _moveDelegates(user,delegates[user],timeToken.amount);
+        require(timeToken.amount > 0, "NULL_TIMETOKEN");
+        require(
+            timeToken.lockFromBlock + timeToken.lockTime > block.number,
+            "LOCKING"
+        );
+        require(timeToken.locked, "ALREADY_UNLOCK");
+        timeToken.locked = false;
+        power[user] -=
+            timeToken.lockFromBlock -
+            timeToken.stakeFromBlock +
+            timeToken.lockTime *
+            2;
+        _moveDelegates(user, delegates[user], timeToken.amount);
     }
 
-    function getNotZeroIds(address user) public view returns (uint256[] memory validIds) {
-        uint256 k=0;
-        for(uint256 i=0;i<tokenIds[user];i++){
+    function getNotZeroIds(
+        address user
+    ) public view returns (uint256[] memory validIds) {
+        uint256 k = 0;
+        for (uint256 i = 0; i < tokenIds[user]; i++) {
             TimeToken storage timeToken = timeTokens[user][i];
-            if(timeToken.amount!=0){
-                validIds[k]=i;
+            if (timeToken.amount != 0) {
+                validIds[k] = i;
                 k++;
             }
         }
@@ -192,10 +211,11 @@ contract TimeTokenPower{
         emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
     }
 
-    function getCurrentVotingPower(address user) external view returns (uint256) {
+    function getCurrentVotingPower(
+        address user
+    ) external view returns (uint256) {
         uint256 nCheckpoints = numCheckpoints[user];
-        return
-            nCheckpoints > 0 ? checkpoints[user][nCheckpoints - 1].votes : 0;
+        return nCheckpoints > 0 ? checkpoints[user][nCheckpoints - 1].votes : 0;
     }
 
     function getVotingPowerAt(

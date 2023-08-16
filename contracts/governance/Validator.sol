@@ -50,15 +50,19 @@ contract Validator is IValidator {
         address user
     ) external view returns (bool) {}
 
-    function isProposalPassed(address governance,IReview review,uint256 proposalId) external view returns(bool){
-        return review.isProposalPassed(governance,proposalId);
+    function isProposalPassed(
+        address governance,
+        IReview review,
+        uint256 proposalId
+    ) external view returns (bool) {
+        return review.isProposalPassed(governance, proposalId);
     }
 
     // function isProposalPassed(
     //     IGovernance governance,
     //     uint256 proposalId
     // ) external view returns (bool) {
-        
+
     // }
 
     function getMinimumPowerNeeded(

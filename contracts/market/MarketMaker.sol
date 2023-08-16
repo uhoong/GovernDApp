@@ -21,7 +21,7 @@ contract MarketMaker is Ownable, ERC1155Receiver {
     /*
      *  Constants
      */
-    uint64 public constant FEE_RANGE = 10**18;
+    uint64 public constant FEE_RANGE = 10 ** 18;
 
     /*
      *  Events
@@ -70,7 +70,7 @@ contract MarketMaker is Ownable, ERC1155Receiver {
     uint64 public fee;
     uint256 public funding;
     Stage public stage;
-    uint256 constant ONE = 10**18;
+    uint256 constant ONE = 10 ** 18;
     uint256[] positionIds;
 
     /*
@@ -114,11 +114,9 @@ contract MarketMaker is Ownable, ERC1155Receiver {
 
     /// @dev Allows to fund the market with collateral tokens converting them into outcome tokens
     /// Note for the future: should combine splitPosition and mergePositions into one function, as code duplication causes things like this to happen.
-    function changeFunding(int256 fundingChange)
-        public
-        onlyOwner
-        atStage(Stage.Paused)
-    {
+    function changeFunding(
+        int256 fundingChange
+    ) public onlyOwner atStage(Stage.Paused) {
         require(fundingChange != 0, "funding change must be non-zero");
         // Either add or subtract funding based off whether the fundingChange parameter is negative or positive
         if (fundingChange > 0) {
@@ -188,11 +186,10 @@ contract MarketMaker is Ownable, ERC1155Receiver {
         emit AMMFeeWithdrawal(fees);
     }
 
-    function calcBuyAmount(uint256 investmentAmount, uint256 outcomeIndex)
-        public
-        view
-        returns (uint256)
-    {
+    function calcBuyAmount(
+        uint256 investmentAmount,
+        uint256 outcomeIndex
+    ) public view returns (uint256) {
         require(outcomeIndex < positionIds.length, "invalid outcome index");
 
         uint256[] memory poolBalances = getPoolBalances();
@@ -217,11 +214,10 @@ contract MarketMaker is Ownable, ERC1155Receiver {
             );
     }
 
-    function calcSellAmount(uint256 returnAmount, uint256 outcomeIndex)
-        public
-        view
-        returns (uint256 outcomeTokenSellAmount)
-    {
+    function calcSellAmount(
+        uint256 returnAmount,
+        uint256 outcomeIndex
+    ) public view returns (uint256 outcomeTokenSellAmount) {
         require(outcomeIndex < positionIds.length, "invalid outcome index");
 
         uint256[] memory poolBalances = getPoolBalances();
@@ -337,9 +333,9 @@ contract MarketMaker is Ownable, ERC1155Receiver {
 
     function onERC1155Received(
         address operator,
-        address, /*from*/
-        uint256, /*id*/
-        uint256, /*value*/
+        address /*from*/,
+        uint256 /*id*/,
+        uint256 /*value*/,
         bytes calldata /*data*/
     ) external returns (bytes4) {
         if (operator == address(this)) {
@@ -350,9 +346,9 @@ contract MarketMaker is Ownable, ERC1155Receiver {
 
     function onERC1155BatchReceived(
         address _operator,
-        address, /*from*/
-        uint256[] calldata, /*ids*/
-        uint256[] calldata, /*values*/
+        address /*from*/,
+        uint256[] calldata /*ids*/,
+        uint256[] calldata /*values*/,
         bytes calldata /*data*/
     ) external returns (bytes4) {
         if (_operator == address(this)) {
@@ -361,22 +357,18 @@ contract MarketMaker is Ownable, ERC1155Receiver {
         return 0x0;
     }
 
-    function generateBasicPartition(uint256 outcomeSlotCount)
-        private
-        pure
-        returns (uint256[] memory partition)
-    {
+    function generateBasicPartition(
+        uint256 outcomeSlotCount
+    ) private pure returns (uint256[] memory partition) {
         partition = new uint256[](outcomeSlotCount);
         for (uint256 i = 0; i < outcomeSlotCount; i++) {
             partition[i] = 1 << i;
         }
     }
 
-    function generateAtomicPositionId(uint256 i)
-        internal
-        view
-        returns (uint256)
-    {
+    function generateAtomicPositionId(
+        uint256 i
+    ) internal view returns (uint256) {
         return positionIds[i];
     }
 

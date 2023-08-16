@@ -92,9 +92,10 @@ contract ConditionalTokens is ERC1155 {
     /// @dev Called by the oracle for reporting results of conditions. Will set the payout vector for the condition with the ID ``keccak256(abi.encodePacked(oracle, questionId, outcomeSlotCount))``, where oracle is the message sender, questionId is one of the parameters of this function, and outcomeSlotCount is the length of the payouts parameter, which contains the payoutNumerators for each outcome slot of the condition.
     /// @param questionId The question ID the oracle is answering for
     /// @param payouts The oracle's answer
-    function reportPayouts(bytes32 questionId, uint256[] calldata payouts)
-        external
-    {
+    function reportPayouts(
+        bytes32 questionId,
+        uint256[] calldata payouts
+    ) external {
         uint256 outcomeSlotCount = payouts.length;
         require(
             outcomeSlotCount > 1,
@@ -338,11 +339,9 @@ contract ConditionalTokens is ERC1155 {
     /// @dev Gets the outcome slot count of a condition.
     /// @param conditionId ID of the condition.
 
-    function getOutcomeSlotCount(bytes32 conditionId)
-        external
-        view
-        returns (uint256)
-    {
+    function getOutcomeSlotCount(
+        bytes32 conditionId
+    ) external view returns (uint256) {
         return payoutNumerators[conditionId].length;
     }
 
@@ -361,22 +360,20 @@ contract ConditionalTokens is ERC1155 {
     /// @dev Constructs an outcome collection ID from a parent collection and an outcome collection.
     /// @param conditionId Condition ID of the outcome collection to combine with the parent outcome collection.
     /// @param indexSet Index set of the outcome collection to combine with the parent outcome collection.
-    function getCollectionId(bytes32 conditionId, uint256 indexSet)
-        external
-        pure
-        returns (bytes32)
-    {
+    function getCollectionId(
+        bytes32 conditionId,
+        uint256 indexSet
+    ) external pure returns (bytes32) {
         return CTHelpers.getCollectionId(conditionId, indexSet);
     }
 
     /// @dev Constructs a position ID from a collateral token and an outcome collection. These IDs are used as the ERC-1155 ID for this contract.
     /// @param collateralToken Collateral token which backs the position.
     /// @param collectionId ID of the outcome collection associated with this position.
-    function getPositionId(IERC20 collateralToken, bytes32 collectionId)
-        external
-        pure
-        returns (uint256)
-    {
+    function getPositionId(
+        IERC20 collateralToken,
+        bytes32 collectionId
+    ) external pure returns (uint256) {
         return CTHelpers.getPositionId(collateralToken, collectionId);
     }
 }
