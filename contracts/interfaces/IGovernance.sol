@@ -37,7 +37,7 @@ interface IGovernance {
         uint256 stakeAmount; //暂时没用的字段
         address strategy;
         bytes32 ipfsHash;
-        mapping(address => uint256) stakes; //暂时没用的字段
+        mapping(address => uint256) stakes;
     }
 
     struct ProposalInfo {
@@ -97,6 +97,11 @@ interface IGovernance {
         address indexed initiatorChange
     );
 
+    event StakeThresholdChanged(
+        uint256 newStakeThreshold,
+        address indexed initiatorChange
+    );
+
     function create(
         uint256 proposalType,
         IExecutor executor,
@@ -118,7 +123,7 @@ interface IGovernance {
 
     // function deposit(uint256 proposalId) external;
 
-    // function getStakeOnProposal(uint256 proposalId, address staker) external view returns (uint256);
+    function getStakeOnProposal(uint256 proposalId, address user) external view returns (uint256);
 
     // 提案执行相关函数，governance 合约负责 executor 合约执行交易，具体的执行过程由 executor 合约执行
     function authorizeExecutors(address[] memory executors) external;

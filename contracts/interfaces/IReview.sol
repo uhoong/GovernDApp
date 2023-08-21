@@ -7,7 +7,7 @@ interface IReview {
     function createReview(
         address governance,
         uint256 proposalId
-    ) external returns (address);
+    ) external;
 
     function isProposalPassed(
         address governance,

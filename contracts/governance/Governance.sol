@@ -22,6 +22,8 @@ contract Governance is Ownable, IGovernance {
     // uint256 private _reviewDuration;
     // uint256 private _executeDelay;
 
+    uint256 private STAKE_THRESHOLD;
+
     IERC20 public immutable governanceToken;
     IReview public immutable review;
 
@@ -30,12 +32,14 @@ contract Governance is Ownable, IGovernance {
         address _review,
         address _governanceToken,
         uint256 stakingDelay,
+        uint256 stake_threshold,
         address[] memory executors
     ) {
         _setGovernanceStrategy(governanceStrategy);
         _setStakingDelay(stakingDelay);
         review = IReview(_review);
         governanceToken = IERC20(_governanceToken);
+        _setStakeThreshold(stake_threshold);
         authorizeExecutors(executors);
     }
 
@@ -147,69 +151,56 @@ contract Governance is Ownable, IGovernance {
         emit ProposalCanceled(proposalId);
     }
 
-    // function cancel(uint256 proposalId) external override {
-    //     ProposalState state = getProposalState(proposalId);
-    //     require(
-    //         state != ProposalState.Executed &&
-    //             state != ProposalState.Canceled &&
-    //             state != ProposalState.Expired,
-    //         "ONLY_BEFORE_EXECUTED"
-    //     );
+    function stakeForMarket(uint256 proposalId, uint256 amount) external {
+        ProposalState state = getProposalState(proposalId);
+        require(state == ProposalState.Staking, "ONLY_STAKING");
 
-    //     Proposal storage proposal = _proposals[proposalId];
-    //     require(
-    //         IValidator(address(proposal.executor)).validateProposalCancellation(
-    //             this,
-    //             proposal.creator
-    //         ),
-    //         "PROPOSITION_CANCELLATION_INVALID"
-    //     );
-    //     proposal.canceled = true;
-    //     for (uint256 i = 0; i < proposal.targets.length; i++) {
-    //         proposal.executor.cancelTransaction(
-    //             proposal.targets[i],
-    //             proposal.values[i],
-    //             proposal.signatures[i],
-    //             proposal.calldatas[i],
-    //             proposal.executionBlock,
-    //             proposal.withDelegatecalls[i]
-    //         );
-    //     }
+        require(
+            governanceToken.transferFrom(msg.sender, address(this), amount),
+            "GOVERNACNETOKEN_TRANSFER_FAILED"
+        );
 
-    //     emit ProposalCanceled(proposalId);
-    // }
+        Proposal storage proposal = _proposals[proposalId];
+        proposal.stakeAmount+=amount;
+        proposal.stakes[msg.sender]+=amount;
+    }
 
-    // function stake(uint256 proposalId, uint256 amount) external {
-    //     ProposalState state = getProposalState(proposalId);
-    //     require(state == ProposalState.Staking, "ONLY_STAKING");
+    function prepareMarket(uint256 proposalId) external{
+        ProposalState state = getProposalState(proposalId);
+        require(state == ProposalState.Staking, "ONLY_STAKING");
 
-    //     require(
-    //         governanceToken.transferFrom(msg.sender, address(this), amount),
-    //         "GOVERNACNETOKEN_TRANSFER_FAILED"
-    //     );
+        Proposal storage proposal = _proposals[proposalId];
+        require(proposal.stakeAmount>STAKE_THRESHOLD,"STAKE_NOT_ENOUGH");
 
-    //     Proposal storage proposal = _proposals[proposalId];
-    //     proposal.stakeAmount+=amount;
-    //     proposal.stakes[msg.sender]+=amount;
-    // }
+        proposal.marketReview = true;
+    }
+    
+    function deposit(uint256 proposalId) external{
+        ProposalState state = getProposalState(proposalId);
+        require(state != ProposalState.Staking, "PROPOSAL_STAKING");
 
-    // function deposit(uint256 proposalId) external{
-    //     ProposalState state = getProposalState(proposalId);
-    //     require(state != ProposalState.Staking, "PROPOSAL_STAKING");
+        Proposal storage proposal = _proposals[proposalId];
+        uint256 amount = proposal.stakes[msg.sender];
 
-    //     Proposal storage proposal = _proposals[proposalId];
-    //     uint256 amount = proposal.stakes[msg.sender];
+        require(amount!=0,"ZERO_STAKE");
+        proposal.stakes[msg.sender]=0;
+        governanceToken.transfer(msg.sender,amount);
+    }
 
-    //     require(amount!=0,"ZERO_STAKE");
+    function getStakeOnProposal(uint256 proposalId, address user) external view override returns (uint256){
+        Proposal storage proposal = _proposals[proposalId];
+        return proposal.stakes[user];
+    }
 
-    //     proposal.stakes[msg.sender]=0;
-    //     governanceToken.transfer(msg.sender,amount);
-    // }
-
-    // function getStakeOnProposal(uint256 proposalId, address staker) external view returns (uint256){
-    //     Proposal storage proposal = _proposals[proposalId];
-    //     return proposal.stakes[staker];
-    // }
+    // 提案投票/市场创建
+    function createReview(uint256 proposalId) public {
+        require(
+            getProposalState(proposalId) == ProposalState.Active,
+            "REVIEW_CLOSED"
+        );
+        // Proposal storage proposal = _proposals[proposalId];
+        review.createReview(address(this), proposalId);
+    }
 
     // 提案执行相关函数，governance 合约负责 executor 合约执行交易，具体的执行过程由 executor 合约执行
     function authorizeExecutors(
@@ -311,61 +302,6 @@ contract Governance is Ownable, IGovernance {
         emit ProposalExecuted(proposalId, msg.sender);
     }
 
-    // function execute(uint256 proposalId) external payable {
-    //     require(
-    //         getProposalState(proposalId) == ProposalState.Succeeded,
-    //         "INVALID_STATE_FOR_EXECUTE"
-    //     );
-    //     Proposal storage proposal = _proposals[proposalId];
-    //     require(
-    //         block.timestamp >= proposal.executionBlock,
-    //         "TIMELOCK_NOT_FINISHED"
-    //     );
-    //     require(
-    //         block.timestamp <= proposal.executionBlock.add(GRACE_PERIOD),
-    //         "GRACE_PERIOD_FINISHED"
-    //     );
-
-    //     bool success;
-    //     bytes memory callData;
-    //     bytes memory resultData;
-
-    //     for (uint256 i = 0; i < proposal.targets.length; i++) {
-    //         if (bytes(proposal.signatures[i]).length == 0) {
-    //             callData = proposal.calldatas[i];
-    //         } else {
-    //             callData = abi.encodePacked(
-    //                 bytes4(keccak256(bytes(proposal.signatures[i]))),
-    //                 proposal.calldatas[i]
-    //             );
-    //         }
-
-    //         if (proposal.withDelegatecalls[i]) {
-    //             require(
-    //                 msg.value >= proposal.values[i],
-    //                 "NOT_ENOUGH_MSG_VALUE"
-    //             );
-    //             (success, resultData) = proposal.targets[i].delegatecall(
-    //                 callData
-    //             );
-    //         } else {
-    //             (success, resultData) = proposal.targets[i].call{
-    //                 value: proposal.values[i]
-    //             }(callData);
-    //         }
-    //     }
-    // }
-
-    // 提案投票/市场创建
-    function createReview(uint256 proposalId) public {
-        require(
-            getProposalState(proposalId) == ProposalState.Active,
-            "REVIEW_CLOSED"
-        );
-        // Proposal storage proposal = _proposals[proposalId];
-        review.createReview(address(this), proposalId);
-    }
-
     // 提案信息获取
     function getProposalState(
         uint256 proposalId
@@ -394,6 +330,8 @@ contract Governance is Ownable, IGovernance {
             proposal.executor.isProposalOverGracePeriod(this, proposalId)
         ) {
             return ProposalState.Expired;
+        }else{
+            return ProposalState.Queued;
         }
     }
 
@@ -440,6 +378,12 @@ contract Governance is Ownable, IGovernance {
 
     function _unauthorizeExecutor(address executor) internal {
         _authorizedExecutors[executor] = false;
+    }
+
+    function _setStakeThreshold(uint256 stake_threshold) internal{
+        STAKE_THRESHOLD = stake_threshold;
+
+        emit StakeThresholdChanged(stake_threshold, msg.sender);
     }
 
     function _setGovernanceStrategy(address governanceStrategy) internal {

@@ -4,50 +4,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {CTHelpers} from "./CTHelpers.sol";
 
-contract ConditionalTokens is ERC1155 {
-    /// @dev Emitted upon the successful preparation of a condition.
-    /// @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(oracle, questionId, outcomeSlotCount))``.
-    /// @param oracle The account assigned to report the result for the prepared condition.
-    /// @param questionId An identifier for the question to be answered by the oracle.
-    /// @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-    event ConditionPreparation(
-        bytes32 indexed conditionId,
-        address indexed oracle,
-        bytes32 indexed questionId,
-        uint256 outcomeSlotCount
-    );
+import {IConditionalTokens} from "../interfaces/market/IConditionalTokens.sol";
 
-    event ConditionResolution(
-        bytes32 indexed conditionId,
-        address indexed oracle,
-        bytes32 indexed questionId,
-        uint256 outcomeSlotCount,
-        uint256[] payoutNumerators
-    );
-
-    /// @dev Emitted when a position is successfully split.
-    event PositionSplit(
-        address indexed stakeholder,
-        IERC20 collateralToken,
-        bytes32 indexed conditionId,
-        uint256[] partition,
-        uint256 amount
-    );
-    /// @dev Emitted when positions are successfully merged.
-    event PositionsMerge(
-        address indexed stakeholder,
-        IERC20 collateralToken,
-        bytes32 indexed conditionId,
-        uint256[] partition,
-        uint256 amount
-    );
-    event PayoutRedemption(
-        address indexed redeemer,
-        IERC20 indexed collateralToken,
-        bytes32 conditionId,
-        uint256[] indexSets,
-        uint256 payout
-    );
+contract ConditionalTokens is ERC1155,IConditionalTokens {
+    
 
     /// Mapping key is an condition ID. Value represents numerators of the payout vector associated with the condition. This array is initialized with a length equal to the outcome slot count. E.g. Condition with 3 outcomes [A, B, C] and two of those correct [0.5, 0.5, 0]. In Ethereum there are no decimal values, so here, 0.5 is represented by fractions like 1/2 == 0.5. That's why we need numerator and denominator values. Payout numerators are also used as a check of initialization. If the numerators array is empty (has length zero), the condition was not created/prepared. See getOutcomeSlotCount.
     mapping(bytes32 => uint256[]) public payoutNumerators;
