@@ -224,7 +224,7 @@ contract TimeTokenPower {
     ) public view returns (uint256) {
         require(
             blockNumber < block.number,
-            "PanGu::getPriorVotes: not yet determined"
+            "BLOCKNUMBER_INVALID"
         );
 
         uint256 nCheckpoints = numCheckpoints[user];

@@ -1,36 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IGovernToken} from "../interfaces/token/IGovernToken.sol";
 
 // import {TimeTokenSuit} from "./HoldingTime.sol";
 
-contract GovernToken is ERC20 {
+contract GovernToken is IGovernToken,ERC20 {
     mapping(address => address) public delegates;
-
-    struct Checkpoint {
-        uint256 fromBlock;
-        uint256 votes;
-    }
 
     mapping(address => mapping(uint256 => Checkpoint)) public checkpoints;
 
     mapping(address => uint256) public numCheckpoints;
 
-    // mapping(address => uint256) public nonces;
-
-    event DelegateChanged(
-        address indexed delegator,
-        address indexed fromDelegate,
-        address indexed toDelegate
-    );
-
-    event DelegateVotesChanged(
-        address indexed delegate,
-        uint previousBalance,
-        uint newBalance
-    );
-
-    constructor(address account) ERC20("GovernToken", "GT") {
+    constructor(address account) ERC20("PanGu", "PG") {
         _mint(account, 10000000e18);
         emit Transfer(address(0), account, 10000000e18);
     }
@@ -63,7 +45,7 @@ contract GovernToken is ERC20 {
     ) public view returns (uint256) {
         require(
             blockNumber < block.number,
-            "GT::getPriorVotes: not yet determined"
+            "BLOCKNUMBER_INVALID"
         );
 
         uint256 nCheckpoints = numCheckpoints[account];
