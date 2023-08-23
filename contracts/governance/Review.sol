@@ -44,7 +44,7 @@ contract Review is IReview {
         address governance,
         uint256 proposalId
     ) external view returns (bool) {
-        address reviewAddr = voteFactory.getAddress(governance, proposalId);
+        address reviewAddr = voteFactory.getContractAddress(governance, proposalId);
         return IVote(reviewAddr).isProposalPassed();
     }
 }

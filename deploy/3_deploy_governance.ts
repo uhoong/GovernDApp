@@ -1,13 +1,10 @@
 import { AddressLike } from "ethers";
 import hre from "hardhat";
 
-export async function deployExecutor(delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold) {
-    const accounts = await hre.ethers.getSigners()
-    const admin = accounts[0];
-
+export async function deployExecutor(adminAddr, delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold) {
     const Executor = await hre.ethers.getContractFactory("Executor");
 
-    const executor = await Executor.deploy(admin.address, delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold);
+    const executor = await Executor.deploy(adminAddr, delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold);
 
     await executor.waitForDeployment();
 

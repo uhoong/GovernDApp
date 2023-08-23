@@ -12,24 +12,24 @@ contract TimeTokenVote is Initializable, IVote {
     uint256 public forVotes;
     uint256 public againstVotes;
     IGovernance public governance;
-
+    uint256 public proposalId;
     mapping(address => Vote) public votes;
 
-    function initialize(address _governance) public initializer {
-        _initialize(_governance);
+    function initialize(address _governance,uint256 _proposalId) public initializer {
+        _initialize(_governance,_proposalId);
     }
 
-    function _initialize(address _governance) internal {
+    function _initialize(address _governance,uint256 _proposalId) internal {
         governance = IGovernance(_governance);
+        proposalId = _proposalId;
     }
 
-    function castVote(uint256 proposalId, bool support) public {
-        _castVote(msg.sender, proposalId, support);
+    function castVote(bool support) public {
+        _castVote(msg.sender, support);
     }
 
     function _castVote(
         address voter,
-        uint256 proposalId,
         bool support
     ) internal {
         require(
@@ -53,7 +53,6 @@ contract TimeTokenVote is Initializable, IVote {
         } else {
             againstVotes = againstVotes + votingPower;
         }
-
         vote.support = support;
         vote.votingPower = votingPower;
     }

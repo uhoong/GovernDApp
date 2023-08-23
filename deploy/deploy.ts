@@ -19,9 +19,10 @@ export async function deploy(lockTimeLimit, delay, gracePeriod, minimumDelay, ma
 
     const factoryAddr = await deployFactory();
 
-    const executorAddr = await deployExecutor(delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold);
     const reviewAddr = await deployReview(factoryAddr, ctAddr, admin);
-    const governanceAddr = await deployGovernance(strategyAddr, reviewAddr, tokenAddr, stakingDelay, stakeThreshold, [executorAddr]);
+    const governanceAddr = await deployGovernance(strategyAddr, reviewAddr, tokenAddr, stakingDelay, stakeThreshold, []);
+    const executorAddr = await deployExecutor(governanceAddr,delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold);
+    
     
     return { ctAddr, ctHelperAddr, tokenAddr, strategyAddr, factoryAddr, executorAddr, reviewAddr, governanceAddr }
 }

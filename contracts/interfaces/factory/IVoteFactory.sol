@@ -7,7 +7,7 @@ interface IVoteFactory {
         uint256 proposalId
     ) external returns (address);
 
-    function getAddress(
+    function getContractAddress(
         address governance,
         uint256 proposalId
     ) external view returns (address);

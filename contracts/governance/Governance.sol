@@ -200,6 +200,7 @@ contract Governance is Ownable, IGovernance {
         );
         // Proposal storage proposal = _proposals[proposalId];
         review.createReview(address(this), proposalId);
+        // TODO:释放事件
     }
 
     // 提案执行相关函数，governance 合约负责 executor 合约执行交易，具体的执行过程由 executor 合约执行

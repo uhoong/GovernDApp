@@ -32,7 +32,7 @@ contract VoteFactory {
         ret = payable(
             new ERC1967Proxy{salt: bytes32(proposalId)}(
                 address(timeTokenVoteImplementation),
-                abi.encodeCall(TimeTokenVote.initialize, (governance))
+                abi.encodeCall(TimeTokenVote.initialize, (governance,proposalId))
             )
         );
     }
@@ -51,7 +51,7 @@ contract VoteFactory {
                             address(timeTokenVoteImplementation),
                             abi.encodeCall(
                                 TimeTokenVote.initialize,
-                                (governance)
+                                (governance,proposalId)
                             )
                         )
                     )
