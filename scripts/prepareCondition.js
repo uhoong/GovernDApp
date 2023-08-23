@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const {deploy} = require("../deploy/deploy");
 
 const ctAddr = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
@@ -8,4 +9,6 @@ async function prepareCondition(){
     console.log(temp)
 }
 
-prepareCondition()
+deploy().then(value=>{
+    console.log(value);
+});
