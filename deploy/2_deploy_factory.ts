@@ -1,6 +1,6 @@
-const hre = require("hardhat");
+import hre from "hardhat";
 
-async function deployFactory() {
+export async function deployFactory() {
     const Factory = await hre.ethers.getContractFactory("VoteFactory");
 
     const factory = await Factory.deploy();
@@ -14,6 +14,6 @@ async function deployFactory() {
     return factory.getAddress();
 }
 
-module.exports = {
-    deployFactory,
-}
+// module.exports = {
+//     deployFactory,
+// }

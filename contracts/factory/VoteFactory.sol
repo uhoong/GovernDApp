@@ -24,7 +24,7 @@ contract VoteFactory {
         address governance,
         uint256 proposalId
     ) public returns (address ret) {
-        address addr = getAddress(governance, proposalId);
+        address addr = getContractAddress(governance, proposalId);
         uint codeSize = addr.code.length;
         if (codeSize > 0) {
             return payable(addr);
@@ -37,7 +37,7 @@ contract VoteFactory {
         );
     }
 
-    function getAddress(
+    function getContractAddress(
         address governance,
         uint256 proposalId
     ) public view returns (address) {
@@ -60,7 +60,7 @@ contract VoteFactory {
     }
 
     // function createTimeTokenVote(address _owner,address _verifyingSigner,address _checkSigProxy,uint256 salt) public returns (VerifyingPaymaster ret) {
-    //     address addr = getAddress(_owner,_verifyingSigner,_checkSigProxy, salt);
+    //     address addr = getContractAddress(_owner,_verifyingSigner,_checkSigProxy, salt);
     //     uint codeSize = addr.code.length;
     //     if (codeSize > 0) {
     //         return VerifyingPaymaster(payable(addr));
@@ -71,7 +71,7 @@ contract VoteFactory {
     //         )));
     // }
 
-    // function getAddress(address _owner,address _verifyingSigner,address _checkSigProxy,uint256 salt) public view returns (address) {
+    // function getContractAddress(address _owner,address _verifyingSigner,address _checkSigProxy,uint256 salt) public view returns (address) {
     //     return Create2.computeAddress(bytes32(salt), keccak256(abi.encodePacked(
     //             type(ERC1967Proxy).creationCode,
     //             abi.encode(

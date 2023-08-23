@@ -2,13 +2,14 @@
     "compilerOptions": {
         "target": "es2018",
         "module": "commonjs",
-        "strict": true,
+        "strict": false,
         "esModuleInterop": true,
         "outDir": "dist",
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
     },
     "include": [
-        "./contracts",
+        "./deploy",
+        "./scripts",
         "./test",
         "./typechain-types"
     ],

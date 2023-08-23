@@ -1,6 +1,7 @@
-const hre = require("hardhat");
+import { AddressLike } from "ethers";
+import hre from "hardhat";
 
-async function deployExecutor(delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold) {
+export async function deployExecutor(delay, gracePeriod, minimumDelay, maximumDelay, tokenAddr, propositionThreshold) {
     const accounts = await hre.ethers.getSigners()
     const admin = accounts[0];
 
@@ -17,7 +18,7 @@ async function deployExecutor(delay, gracePeriod, minimumDelay, maximumDelay, to
     return executor.getAddress();
 }
 
-async function deployReview(factoryAddr, ctAddr, oracleAddr) {
+export async function deployReview(factoryAddr, ctAddr, oracleAddr) {
     const accounts = await hre.ethers.getSigners()
     const admin = accounts[0];
 
@@ -34,7 +35,7 @@ async function deployReview(factoryAddr, ctAddr, oracleAddr) {
     return review.getAddress();
 }
 
-async function deployGovernance(strategyAddr, reviewAddr, tokenAddr, stakingDelay, stakeThreshold, executors) {
+export async function deployGovernance(strategyAddr, reviewAddr, tokenAddr, stakingDelay, stakeThreshold, executors) {
     const Governance = await hre.ethers.getContractFactory("Governance");
 
     const governance = await Governance.deploy(strategyAddr, reviewAddr, tokenAddr, stakingDelay, stakeThreshold, executors);
@@ -48,8 +49,8 @@ async function deployGovernance(strategyAddr, reviewAddr, tokenAddr, stakingDela
     return governance.getAddress();
 }
 
-module.exports = {
-    deployExecutor,
-    deployReview,
-    deployGovernance,
-}
+// module.exports = {
+//     deployExecutor,
+//     deployReview,
+//     deployGovernance,
+// }

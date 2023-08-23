@@ -1,6 +1,6 @@
-const hre = require("hardhat");
+import hre from "hardhat";
 
-async function deployCT(erc1155URI) {
+export async function deployCT(erc1155URI) {
     const CT = await hre.ethers.getContractFactory("ConditionalTokens");
 
     const ct = await CT.deploy(erc1155URI);
@@ -12,9 +12,9 @@ async function deployCT(erc1155URI) {
     );
 
     return ct.getAddress();
-}
+}``
 
-async function deployCTHelper() {
+export async function deployCTHelper() {
     const CTHelper = await hre.ethers.getContractFactory("CTHelpers");
 
     const ctHelper = await CTHelper.deploy();
@@ -28,7 +28,7 @@ async function deployCTHelper() {
     return ctHelper.getAddress();
 }
 
-async function deployGovernToken(account) {
+export async function deployGovernToken(account) {
     const GovernToken = await hre.ethers.getContractFactory("GovernToken");
 
     const governToken = await GovernToken.deploy(account);
@@ -42,7 +42,7 @@ async function deployGovernToken(account) {
     return governToken.getAddress();
 }
 
-async function deployTokenPowerStrategy(tokenAddr, lockTimeLimit) {
+export async function deployTokenPowerStrategy(tokenAddr, lockTimeLimit) {
     const TokenPower = await hre.ethers.getContractFactory("TimeTokenPower");
 
     const tokenPower = await TokenPower.deploy(tokenAddr, lockTimeLimit);
@@ -56,9 +56,9 @@ async function deployTokenPowerStrategy(tokenAddr, lockTimeLimit) {
     return tokenPower.getAddress();
 }
 
-module.exports = {
-    deployCT,
-    deployCTHelper,
-    deployGovernToken,
-    deployTokenPowerStrategy,
-}
+// module.exports = {
+//     deployCT,
+//     deployCTHelper,
+//     deployGovernToken,
+//     deployTokenPowerStrategy,
+// }

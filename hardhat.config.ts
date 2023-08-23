@@ -1,10 +1,12 @@
-require("@nomicfoundation/hardhat-toolbox");
-require('@typechain/hardhat')
-require('@nomicfoundation/hardhat-ethers')
-require('@nomicfoundation/hardhat-chai-matchers')
+import '@nomicfoundation/hardhat-toolbox'
+import '@typechain/hardhat'
+import '@nomicfoundation/hardhat-ethers'
+import "@nomiclabs/hardhat-ethers"
+import '@nomicfoundation/hardhat-chai-matchers'
 
 /** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+// module.exports = {
+export default {
     solidity: {
         version: "0.8.19",
         settings: {
