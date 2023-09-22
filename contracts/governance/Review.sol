@@ -13,6 +13,7 @@ contract Review is IReview {
     IVoteFactory public voteFactory;
     IConditionalTokens public ct;
     address oracle;
+    mapping(uint256=>bool) public isInitialized;
 
     // mapping (uint256 => bool) public reviewCreated;
 
@@ -27,12 +28,14 @@ contract Review is IReview {
         uint256 proposalId
     ) public{
         IGovernance.ProposalInfo memory proposalInfo = IGovernance(governance).getProposalById(proposalId);
+        require(!isInitialized[proposalId],"Pangu501");
         if(proposalInfo.marketReview){
             ct.prepareCondition(oracle,bytes32(proposalId),2);
             // TODO：初始化交易市场
         }else{
             voteFactory.createVote(governance, proposalId);
         }
+        isInitialized[proposalId]=true;
     }
 
     //参数直接传入合约地址是作为底层函数，后续可以开发外围合约，在外围合约中计算地址
@@ -45,6 +48,7 @@ contract Review is IReview {
         uint256 proposalId
     ) external view returns (bool) {
         address reviewAddr = voteFactory.getContractAddress(governance, proposalId);
+        require(isInitialized[proposalId],"Pangu502");
         return IVote(reviewAddr).isProposalPassed();
     }
 }

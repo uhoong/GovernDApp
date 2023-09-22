@@ -19,6 +19,10 @@ export default {
     networks: {
         localhost: {
             url: "http://127.0.0.1:8545/",
+        },
+
+        testnet:{
+            url: "http://10.130.157.227:3400",
         }
     },
     typechain: {

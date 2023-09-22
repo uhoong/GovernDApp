@@ -161,33 +161,36 @@ contract Governance is Ownable, IGovernance {
         );
 
         Proposal storage proposal = _proposals[proposalId];
-        proposal.stakeAmount+=amount;
-        proposal.stakes[msg.sender]+=amount;
+        proposal.stakeAmount += amount;
+        proposal.stakes[msg.sender] += amount;
     }
 
-    function prepareMarket(uint256 proposalId) external{
+    function prepareMarket(uint256 proposalId) external {
         ProposalState state = getProposalState(proposalId);
         require(state == ProposalState.Staking, "ONLY_STAKING");
 
         Proposal storage proposal = _proposals[proposalId];
-        require(proposal.stakeAmount>STAKE_THRESHOLD,"STAKE_NOT_ENOUGH");
+        require(proposal.stakeAmount > STAKE_THRESHOLD, "STAKE_NOT_ENOUGH");
 
         proposal.marketReview = true;
     }
-    
-    function deposit(uint256 proposalId) external{
+
+    function deposit(uint256 proposalId) external {
         ProposalState state = getProposalState(proposalId);
         require(state != ProposalState.Staking, "PROPOSAL_STAKING");
 
         Proposal storage proposal = _proposals[proposalId];
         uint256 amount = proposal.stakes[msg.sender];
 
-        require(amount!=0,"ZERO_STAKE");
-        proposal.stakes[msg.sender]=0;
-        governanceToken.transfer(msg.sender,amount);
+        require(amount != 0, "ZERO_STAKE");
+        proposal.stakes[msg.sender] = 0;
+        governanceToken.transfer(msg.sender, amount);
     }
 
-    function getStakeOnProposal(uint256 proposalId, address user) external view override returns (uint256){
+    function getStakeOnProposal(
+        uint256 proposalId,
+        address user
+    ) external view override returns (uint256) {
         Proposal storage proposal = _proposals[proposalId];
         return proposal.stakes[user];
     }
@@ -315,24 +318,26 @@ contract Governance is Ownable, IGovernance {
             return ProposalState.Staking;
         } else if (block.number <= proposal.endBlock) {
             return ProposalState.Active;
-        } else if (
-            !IValidator(address(proposal.executor)).isProposalPassed(
-                address(this),
-                review,
-                proposalId
-            )
-        ) {
-            return ProposalState.Failed;
-        } else if (proposal.executionBlock == 0) {
-            return ProposalState.Succeeded;
-        } else if (proposal.executed) {
-            return ProposalState.Executed;
-        } else if (
-            proposal.executor.isProposalOverGracePeriod(this, proposalId)
-        ) {
+        } else if (review.isInitialized(proposalId)) {
+            if (
+                !IValidator(address(proposal.executor)).isProposalPassed(
+                    address(this),
+                    review,
+                    proposalId
+                )
+            ) {
+                return ProposalState.Failed;
+            } else if (proposal.executionBlock == 0) {
+                return ProposalState.Succeeded;
+            } else if (proposal.executed) {
+                return ProposalState.Executed;
+            }else if (proposal.executor.isProposalOverGracePeriod(this, proposalId)) {
+                return ProposalState.Expired;
+            } else {
+                return ProposalState.Queued;
+            }
+        } else {
             return ProposalState.Expired;
-        }else{
-            return ProposalState.Queued;
         }
     }
 
@@ -381,7 +386,7 @@ contract Governance is Ownable, IGovernance {
         _authorizedExecutors[executor] = false;
     }
 
-    function _setStakeThreshold(uint256 stake_threshold) internal{
+    function _setStakeThreshold(uint256 stake_threshold) internal {
         STAKE_THRESHOLD = stake_threshold;
 
         emit StakeThresholdChanged(stake_threshold, msg.sender);

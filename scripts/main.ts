@@ -51,7 +51,7 @@ async function main() {
     await tx.wait();
     tx = await tempStrategy.stake(ethers.parseEther("2000"));
     await tx.wait();
-    tokenId = await strategy.tokenIds(signer1.address);
+    tokenId = await tempStrategy.tokenIds(signer1.address);
     tx = await tempStrategy.lock(tokenId-1n,5000,signer1.address);
     await tx.wait();
     console.log(`signer1 的币权为：${await strategy.getCurrentVotingPower(signer1.address)}`);
